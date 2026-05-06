@@ -4,13 +4,13 @@ public class Pedido {
     private Cliente cliente;
     private Mesa mesa;
     private ArrayList<ItemPedido> itens;
-    private String status;
+    private boolean aberto;
 
     public Pedido(Cliente cliente, Mesa mesa) {
         this.cliente = cliente;
         this.mesa = mesa;
         this.itens = new ArrayList<>();
-        this.status = "ABERTO";
+        this.aberto = true;
     }
 
     public Cliente getCliente() {
@@ -21,7 +21,7 @@ public class Pedido {
         return mesa;
     }
 
-    public String getStatus() {
+    public boolean getStatus() {
         return status;
     }
 
@@ -52,7 +52,7 @@ public class Pedido {
         }
 
         cliente.adicionarBonus(total);
-        this.status = "PAGO";
+        this.aberto = false;
 
         System.out.println("Mesa: " + mesa.getNumero());
         System.out.println("Pagamento realizado com " + tipoPagamento);
