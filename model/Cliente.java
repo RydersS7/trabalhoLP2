@@ -1,16 +1,22 @@
+package model;
+
 public class Cliente {
     private String nome;
     private String cpf;
     private String email;
     private double bonus;
 
-    public Cliente(String nome, String cpf, String email) {
+    // Construtores
+    public Cliente() {}
+
+    public Cliente(String nome, String cpf, String email, double bonus) {
         this.nome = nome;
         this.cpf = cpf;
         this.email = email;
-        this.bonus = 0;
+        this.bonus = bonus;
     }
 
+    // Getters e Setters
     public String getNome() {
         return nome;
     }
@@ -21,6 +27,10 @@ public class Cliente {
 
     public String getCpf() {
         return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
     }
 
     public String getEmail() {
@@ -35,13 +45,7 @@ public class Cliente {
         return bonus;
     }
 
-    public void adicionarBonus(double valor) {
-        this.bonus += valor * 0.10;
-    }
-
-    public void usarBonus(double valor) {
-        if (bonus >= valor) {
-            bonus -= valor;
-        }
+    public void setBonus(double bonus) {
+        this.bonus = bonus;
     }
 }
