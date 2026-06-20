@@ -5,10 +5,8 @@ import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.List;
 
-// Vinculação estrita com as classes do seu pacote model
+import controller.RestauranteController;
 import model.Mesa;
 import model.Cliente;
 import model.ItemCardapio;
@@ -20,24 +18,18 @@ import model.StatusMesa;
 
 /**
  * MEZA - Sistema de Gestão de Restaurante
- * MainFrame.java — Integração Completa sem Abstrações Visuais
+ * MainFrame.java — Interface Gráfica que chama o Controller
  */
 public class MainFrame extends JFrame {
 
-    // ---- MEMÓRIA DINÂMICA DO PACOTE MODEL (Substitui dados Hardcoded) ----
-    private List<Mesa> listaMesas;
-    private List<Cliente> listaClientes;
-    private List<ItemCardapio> listaCardapio;
-    private List<Pedido> listaPedidosAtivos;
+    // ---- REFERÊNCIA AO CONTROLLER ----
+    private RestauranteController controller;
 
-    // ---- COMPONENTES GRÁFICOS COMPLETOS ----
+    // ---- COMPONENTES GRÁFICOS ----
     private CardLayout cardLayout;
     private JPanel cardPanel;
-    
-    // Elementos do Dashboard (Mesas)
     private JPanel gridMesasPanel;
     
-    // Tabelas e Componentes de Dados
     private JTable tabelaCardapio;
     private DefaultTableModel modelCardapio;
     
@@ -48,44 +40,20 @@ public class MainFrame extends JFrame {
     private DefaultTableModel modelPedidos;
 
     /**
-     * Construtor do Frame Principal
+     * Construtor que recebe o controller
      */
-    public MainFrame() {
-        // 1. Inicializa o estado do modelo de dados
-        inicializarBancoDeDadosModel();
+    public MainFrame(RestauranteController controller) {
+        this.controller = controller;
         
-        // 2. Executa a montagem visual exata da interface
+        // 1. Monta a interface
         initComponents();
         
-        // 3. Alimenta a interface com as informações dos objetos
-        atualizarExibicaoMesas();
-        sincronizarTabelaCardapio();
-        sincronizarTabelaClientes();
-        sincronizarTabelaPedidos();
+        // 2. Carrega os dados iniciais
+        atualizarTodos();
     }
 
     /**
-     * Configura o estado inicial do sistema: 10 mesas livres carregadas no model.
-     * Cardápio, Clientes e Pedidos começam completamente limpos para inserção dinâmica.
-     */
-    private void inicializarBancoDeDadosModel() {
-        listaMesas = new ArrayList<>();
-        listaClientes = new ArrayList<>();
-        listaCardapio = new ArrayList<>();
-        listaPedidosAtivos = new ArrayList<>();
-
-        // Cria e adiciona exatamente as 10 mesas iniciais usando o model
-        for (int i = 1; i <= 10; i++) {
-            Mesa mesa = new Mesa();
-            mesa.setNumero(i);
-            mesa.setStatus(StatusMesa.LIVRE); // Atribui a constante string "LIVRE"
-            listaMesas.add(mesa);
-        }
-    }
-
-    /**
-     * Inicialização e posicionamento completo de todos os componentes da janela.
-     * Mantém rigorosamente o design original baseado em Sidebar e Bottom-Buttons.
+     * Inicializa todos os componentes visuais
      */
     private void initComponents() {
         setTitle("MEZA - Gestão de Restaurante");
@@ -93,33 +61,32 @@ public class MainFrame extends JFrame {
         setSize(1100, 650);
         setLocationRelativeTo(null);
 
-        // Painel Raiz da Aplicação
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(new Color(245, 245, 245));
 
-        // Construção da Barra Superior e Lateral Esquerda
+        // Barra superior e sidebar
         JPanel topbar = criarComponenteTopbar();
         JPanel sidebar = criarComponenteSidebar();
         
         mainPanel.add(topbar, BorderLayout.NORTH);
         mainPanel.add(sidebar, BorderLayout.WEST);
 
-        // Configuração do CardLayout Central para Troca de Telas
+        // CardLayout para as diferentes telas
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
         cardPanel.setBackground(new Color(245, 245, 245));
 
-        // Inicialização Estrutural das Tabelas do Sistema
-        modelCardapio = new DefaultTableModel(new Object[]{"Item", "Categoria", "Preço Base", "Especificação / Atributo"}, 0);
+        // Inicializa as tabelas
+        modelCardapio = new DefaultTableModel(new Object[]{"Item", "Categoria", "Preço Base", "Especificação"}, 0);
         tabelaCardapio = configEstiloTabela(new JTable(modelCardapio));
 
-        modelClientes = new DefaultTableModel(new Object[]{"Registro ID", "Nome Completo", "Telefone de Contato"}, 0);
+        modelClientes = new DefaultTableModel(new Object[]{"Registro ID", "Nome Completo", "Email e Bônus"}, 0);
         tabelaClientes = configEstiloTabela(new JTable(modelClientes));
 
-        modelPedidos = new DefaultTableModel(new Object[]{"Mesa Origem", "Resumo dos Itens Solicitados", "Valor Total Acumulado"}, 0);
+        modelPedidos = new DefaultTableModel(new Object[]{"Mesa Origem", "Itens Solicitados", "Valor Total"}, 0);
         tabelaPedidos = configEstiloTabela(new JTable(modelPedidos));
 
-        // Injeção dos painéis construídos dentro do gerenciador de fluxo
+        // Adiciona as telas ao CardLayout
         cardPanel.add(montarPainelDashboard(), "DashboardPanel");
         cardPanel.add(montarPainelPedidos(), "OrderPanel");
         cardPanel.add(montarPainelCardapio(), "MenuPanel");
@@ -130,8 +97,17 @@ public class MainFrame extends JFrame {
     }
 
     /**
-     * Tela 1: Dashboard - Mostra os cartões visuais das mesas baseados no Model
+     * Atualiza todos os dados exibidos
      */
+    private void atualizarTodos() {
+        atualizarExibicaoMesas();
+        sincronizarTabelaCardapio();
+        sincronizarTabelaClientes();
+        sincronizarTabelaPedidos();
+    }
+
+    // ======================== DASHBOARD (Mesas) ========================
+
     private JPanel montarPainelDashboard() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
@@ -141,7 +117,6 @@ public class MainFrame extends JFrame {
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
         panel.add(lblTitulo, BorderLayout.NORTH);
 
-        // Grid das mesas com espaçamento de layout regulado
         gridMesasPanel = new JPanel(new GridLayout(0, 4, 15, 15));
         gridMesasPanel.setBackground(Color.WHITE);
         gridMesasPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
@@ -153,24 +128,21 @@ public class MainFrame extends JFrame {
         return panel;
     }
 
-    /**
-     * Reconstrói o grid visual renderizando o estado atualizado de cada objeto Mesa
-     */
     private void atualizarExibicaoMesas() {
         gridMesasPanel.removeAll();
 
-        for (Mesa mesa : listaMesas) {
+        for (Mesa mesa : controller.getListaMesas()) {
             RoundedPanel cardMesa = new RoundedPanel(12);
             cardMesa.setLayout(new BorderLayout());
             cardMesa.setPreferredSize(new Dimension(130, 110));
             cardMesa.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-            // Coloração dinâmica vinculada diretamente ao valor lógico do atributo status
-            if (StatusMesa.LIVRE.equals(mesa.getStatus())) {
-                cardMesa.setBackground(new Color(235, 247, 235)); // Verde sutil para Livre
+            // Coloração baseada no status
+            if (mesa.getStatus().equals(StatusMesa.LIVRE)) {
+                cardMesa.setBackground(new Color(235, 247, 235));
                 cardMesa.setBorder(BorderFactory.createLineBorder(new Color(160, 215, 160), 1));
             } else {
-                cardMesa.setBackground(new Color(255, 235, 230)); // Coral/Vermelho sutil para Ocupada
+                cardMesa.setBackground(new Color(255, 235, 230));
                 cardMesa.setBorder(BorderFactory.createLineBorder(new Color(250, 170, 150), 1));
             }
 
@@ -178,18 +150,19 @@ public class MainFrame extends JFrame {
             lblNum.setFont(new Font("Segoe UI", Font.BOLD, 16));
             lblNum.setForeground(new Color(50, 50, 50));
 
-            JLabel lblStatus = new JLabel(mesa.getStatus(), SwingConstants.CENTER);
+            JLabel lblStatus = new JLabel(mesa.getStatus().toString(), SwingConstants.CENTER);
             lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            lblStatus.setForeground(StatusMesa.LIVRE.equals(mesa.getStatus()) ? new Color(40, 120, 40) : new Color(180, 50, 50));
+            lblStatus.setForeground(mesa.getStatus().equals(StatusMesa.LIVRE) ? new Color(40, 120, 40) : new Color(180, 50, 50));
 
             cardMesa.add(lblNum, BorderLayout.CENTER);
             cardMesa.add(lblStatus, BorderLayout.SOUTH);
 
-            // Vincula o evento de clique na mesa para disparar a lógica do backend
+            // Clique para abrir mesa
+            final Mesa mesaFinal = mesa;
             cardMesa.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    processarCliqueMesa(mesa);
+                    processarCliqueMesa(mesaFinal);
                 }
             });
 
@@ -200,28 +173,20 @@ public class MainFrame extends JFrame {
         gridMesasPanel.repaint();
     }
 
-    /**
-     * Controla a abertura de novas contas nas mesas alterando seu estado interno
-     */
     private void processarCliqueMesa(Mesa mesa) {
-        if (StatusMesa.LIVRE.equals(mesa.getStatus())) {
+        if (mesa.getStatus().equals(StatusMesa.LIVRE)) {
             int resposta = JOptionPane.showConfirmDialog(this, 
                     "Deseja iniciar uma nova conta para a Mesa " + mesa.getNumero() + "?", 
                     "Abertura de Mesa", JOptionPane.YES_NO_OPTION);
             
             if (resposta == JOptionPane.YES_OPTION) {
-                mesa.setStatus(StatusMesa.OCUPADA);
-                
-                // Cria e anexa o novo objeto Pedido
-                Pedido novoPedido = new Pedido();
-                novoPedido.setMesa(mesa);
-                novoPedido.setStatus("ABERTO");
-                mesa.setPedidoAtual(novoPedido);
-                
-                listaPedidosAtivos.add(novoPedido);
-                
-                atualizarExibicaoMesas();
-                sincronizarTabelaPedidos();
+                try {
+                    controller.abrirMesa(mesa.getNumero(),mesa.getClienteAtual());
+                    atualizarTodos();
+                    JOptionPane.showMessageDialog(this, "Mesa " + mesa.getNumero() + " aberta com sucesso!");
+                } catch (IllegalStateException e) {
+                    JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                }
             }
         } else {
             JOptionPane.showMessageDialog(this, 
@@ -230,9 +195,8 @@ public class MainFrame extends JFrame {
         }
     }
 
-    /**
-     * Tela 2: Pedidos Ativos
-     */
+    // ======================== PEDIDOS ========================
+
     private JPanel montarPainelPedidos() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
@@ -246,77 +210,69 @@ public class MainFrame extends JFrame {
         scroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(230, 230, 230)));
         panel.add(scroll, BorderLayout.CENTER);
 
-        // CONTAINER INFERIOR: Mantém o botão de ação posicionado exatamente embaixo
         JPanel bottomContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 10));
         bottomContainer.setBackground(Color.WHITE);
 
         JButton btnLancarItem = new JButton("+ Adicionar Item a uma Mesa");
         estilizarBotaoAcaoInferior(btnLancarItem);
-        
         btnLancarItem.addActionListener(e -> executarLancamentoItemPedido());
+        
         bottomContainer.add(btnLancarItem);
         panel.add(bottomContainer, BorderLayout.SOUTH);
 
         return panel;
     }
 
-    /**
-     * Interpola a ação do botão inferior lançando um produto do cardápio em um pedido ativo
-     */
     private void executarLancamentoItemPedido() {
-        if (listaPedidosAtivos.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Não existem mesas ocupadas com contas abertas no momento.");
+        if (controller.getListaPedidosAtivos().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Não há mesas com contas abertas.");
             return;
         }
-        if (listaCardapio.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "O cardápio está vazio. Cadastre itens na aba Cardápio primeiro.");
+        if (controller.getListaCardapio().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "O cardápio está vazio. Cadastre itens primeiro.");
             return;
         }
 
-        // 1. Seleção da Mesa Alvo
-        String[] mesasAtivas = new String[listaPedidosAtivos.size()];
-        for (int i = 0; i < listaPedidosAtivos.size(); i++) {
-            mesasAtivas[i] = "Mesa " + listaPedidosAtivos.get(i).getMesa().getNumero();
+        // Seleção da mesa
+        String[] mesasAtivas = new String[controller.getListaPedidosAtivos().size()];
+        for (int i = 0; i < controller.getListaPedidosAtivos().size(); i++) {
+            mesasAtivas[i] = "Mesa " + controller.getListaPedidosAtivos().get(i).getMesa().getNumero();
         }
-        String mesaSelecionada = (String) JOptionPane.showInputDialog(this, "Selecione a mesa destino:", 
+        String mesaSelecionada = (String) JOptionPane.showInputDialog(this, "Selecione a mesa:", 
                 "Lançar Item", JOptionPane.QUESTION_MESSAGE, null, mesasAtivas, mesasAtivas[0]);
         if (mesaSelecionada == null) return;
-        int idxPedido = java.util.Arrays.asList(mesasAtivas).indexOf(mesaSelecionada);
-        Pedido pedidoAlvo = listaPedidosAtivos.get(idxPedido);
 
-        // 2. Seleção do Produto do Cardápio
-        String[] produtosCardapio = new String[listaCardapio.size()];
-        for (int i = 0; i < listaCardapio.size(); i++) {
-            produtosCardapio[i] = listaCardapio.get(i).getNome() + " (R$ " + listaCardapio.get(i).getPreco() + ")";
+        int numMesa = Integer.parseInt(mesaSelecionada.replaceAll("[^0-9]", ""));
+
+        // Seleção do item
+        String[] itens = new String[controller.getListaCardapio().size()];
+        for (int i = 0; i < controller.getListaCardapio().size(); i++) {
+            itens[i] = controller.getListaCardapio().get(i).getNome() + " (R$ " + 
+                       controller.getListaCardapio().get(i).getPreco() + ")";
         }
-        String produtoSelecionado = (String) JOptionPane.showInputDialog(this, "Selecione o item do cardápio:", 
-                "Lançar Item", JOptionPane.QUESTION_MESSAGE, null, produtosCardapio, produtosCardapio[0]);
-        if (produtoSelecionado == null) return;
-        int idxItem = java.util.Arrays.asList(produtosCardapio).indexOf(produtoSelecionado);
-        ItemCardapio itemAlvo = listaCardapio.get(idxItem);
+        String itemSelecionado = (String) JOptionPane.showInputDialog(this, "Selecione o item:", 
+                "Lançar Item", JOptionPane.QUESTION_MESSAGE, null, itens, itens[0]);
+        if (itemSelecionado == null) return;
 
-        // 3. Quantidade do Item
-        String qtdStr = JOptionPane.showInputDialog(this, "Informe a quantidade desejada:", "1");
-        if (qtdStr == null || qtdStr.trim().isEmpty()) return;
-        int quantidade = Integer.parseInt(qtdStr.trim());
+        int idxItem = java.util.Arrays.asList(itens).indexOf(itemSelecionado);
+        ItemCardapio item = controller.getListaCardapio().get(idxItem);
 
-        // Cria a instância do ItemPedido associando ao Pedido principal
-        ItemPedido novoItemPedido = new ItemPedido();
-        novoItemPedido.setItem(itemAlvo);
-        novoItemPedido.setQuantidade(quantidade);
+        // Quantidade
+        String qtdStr = JOptionPane.showInputDialog(this, "Quantidade:", "1");
+        if (qtdStr == null) return;
+        int quantidade = Integer.parseInt(qtdStr);
 
-        if (pedidoAlvo.getItens() == null) {
-            pedidoAlvo.setItens(new ArrayList<>());
+        try {
+            controller.adicionarItemAoPedido(numMesa, item, quantidade);
+            atualizarTodos();
+            JOptionPane.showMessageDialog(this, "Item adicionado com sucesso!");
+        } catch (IllegalStateException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
-        pedidoAlvo.getItens().add(novoItemPedido);
-
-        sincronizarTabelaPedidos();
-        JOptionPane.showMessageDialog(this, "Item adicionado com sucesso ao pedido da mesa!");
     }
 
-    /**
-     * Tela 3: Cardápio de Itens
-     */
+    // ======================== CARDÁPIO ========================
+
     private JPanel montarPainelCardapio() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
@@ -330,67 +286,49 @@ public class MainFrame extends JFrame {
         scroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(230, 230, 230)));
         panel.add(scroll, BorderLayout.CENTER);
 
-        // CONTAINER INFERIOR: Botão "+" posicionado perfeitamente na parte de baixo
         JPanel bottomContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 10));
         bottomContainer.setBackground(Color.WHITE);
 
         JButton btnAddCardapio = new JButton("+ Adicionar ao Cardápio");
         estilizarBotaoAcaoInferior(btnAddCardapio);
-        
         btnAddCardapio.addActionListener(e -> executarInclusaoCardapio());
+        
         bottomContainer.add(btnAddCardapio);
         panel.add(bottomContainer, BorderLayout.SOUTH);
 
         return panel;
     }
 
-    /**
-     * Captura os dados da interface e adiciona instâncias de Comida ou Bebida no Model
-     */
     private void executarInclusaoCardapio() {
         String[] categorias = {"Comida", "Bebida"};
-        int tipoSelec = JOptionPane.showOptionDialog(this, "Selecione a categoria do novo item:", 
+        int tipoSelec = JOptionPane.showOptionDialog(this, "Selecione a categoria:", 
                 "Cadastro de Cardápio", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, 
                 null, categorias, categorias[0]);
 
         if (tipoSelec == -1) return;
 
-        String nome = JOptionPane.showInputDialog(this, "Nome do item do cardápio:");
+        String nome = JOptionPane.showInputDialog(this, "Nome do item:");
         if (nome == null || nome.trim().isEmpty()) return;
 
-        String precoStr = JOptionPane.showInputDialog(this, "Preço Unitário (Ex: 34.50):");
-        if (precoStr == null || precoStr.trim().isEmpty()) return;
+        String precoStr = JOptionPane.showInputDialog(this, "Preço Unitário:");
+        if (precoStr == null) return;
         double preco = Double.parseDouble(precoStr.replace(",", "."));
 
-        if (tipoSelec == 0) { // Criação do Objeto Comida
-            String descricao = JOptionPane.showInputDialog(this, "Descrição dos Ingredientes do Prato:");
-            
-            Comida novaComida = new Comida();
-            novaComida.setNome(nome);
-            novaComida.setPreco(preco);
-            novaComida.setDescricao(descricao);
-            novaComida.setIngredientes(new ArrayList<>()); // Inicializa a lista do model
-            
-            listaCardapio.add(novaComida);
-        } else { // Criação do Objeto Bebida
-            String fornecedor = JOptionPane.showInputDialog(this, "Nome da Empresa Fornecedora:");
-            String volume = JOptionPane.showInputDialog(this, "Volume/Tamanho da embalagem (Ex: 350ml):");
-            
-            Bebida novaBebida = new Bebida();
-            novaBebida.setNome(nome);
-            novaBebida.setPreco(preco);
-            novaBebida.setFornecedor(fornecedor);
-            novaBebida.setVolume(volume);
-            
-            listaCardapio.add(novaBebida);
+        if (tipoSelec == 0) {
+            String descricao = JOptionPane.showInputDialog(this, "Descrição dos Ingredientes:");
+            controller.adicionarComida(nome, preco, descricao);
+        } else {
+            String fornecedor = JOptionPane.showInputDialog(this, "Fornecedor:");
+            String volume = JOptionPane.showInputDialog(this, "Volume/Tamanho:");
+            controller.adicionarBebida(nome, preco, fornecedor, volume);
         }
 
-        sincronizarTabelaCardapio();
+        atualizarTodos();
+        JOptionPane.showMessageDialog(this, "Item adicionado ao cardápio!");
     }
 
-    /**
-     * Tela 4: Painel de Clientes
-     */
+    // ======================== CLIENTES ========================
+
     private JPanel montarPainelClientes() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
@@ -404,46 +342,37 @@ public class MainFrame extends JFrame {
         scroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(230, 230, 230)));
         panel.add(scroll, BorderLayout.CENTER);
 
-        // CONTAINER INFERIOR: Botão "+" posicionado perfeitamente na parte de baixo
         JPanel bottomContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 10));
         bottomContainer.setBackground(Color.WHITE);
 
         JButton btnAddCliente = new JButton("+ Adicionar Novo Cliente");
         estilizarBotaoAcaoInferior(btnAddCliente);
-        
         btnAddCliente.addActionListener(e -> executarInclusaoCliente());
+        
         bottomContainer.add(btnAddCliente);
         panel.add(bottomContainer, BorderLayout.SOUTH);
 
         return panel;
     }
 
-    /**
-     * Instancia dinamicamente um objeto Cliente a partir dos dados preenchidos
-     */
     private void executarInclusaoCliente() {
-        String nome = JOptionPane.showInputDialog(this, "Nome completo do Cliente:");
+        String nome = JOptionPane.showInputDialog(this, "Nome completo:");
         if (nome == null || nome.trim().isEmpty()) return;
 
-        String cpf = JOptionPane.showInputDialog(this, "Insera o CPF (Apenas números):");
-        String email = JOptionPane.showInputDialog(this, "Endereço de E-mail:");
+        String cpf = JOptionPane.showInputDialog(this, "CPF (apenas números):");
+        String email = JOptionPane.showInputDialog(this, "Email:");
 
-        Cliente novoCliente = new Cliente();
-        novoCliente.setNome(nome);
-        novoCliente.setCpf(cpf);
-        novoCliente.setEmail(email);
-        novoCliente.setBonus(0.0); // Inicia com o bônus zerado conforme o ciclo de negócio
-
-        listaClientes.add(novoCliente);
-        sincronizarTabelaClientes();
+        controller.cadastrarCliente(nome, cpf, email);
+        atualizarTodos();
+        JOptionPane.showMessageDialog(this, "Cliente cadastrado com sucesso!");
     }
 
-    // ---- MÉTODOS DE EXTRAÇÃO E RE-RENDERIZAÇÃO DE DADOS (Puxando do Model) ----
+    // ======================== SINCRONIZAÇÃO DE TABELAS ========================
 
     private void sincronizarTabelaCardapio() {
         modelCardapio.setRowCount(0);
-        for (ItemCardapio item : listaCardapio) {
-            String categoria = (item instanceof Comida) ? "Comida Prato" : "Bebida";
+        for (ItemCardapio item : controller.getListaCardapio()) {
+            String categoria = (item instanceof Comida) ? "Comida" : "Bebida";
             String especificacao = "";
             
             if (item instanceof Comida) {
@@ -452,14 +381,15 @@ public class MainFrame extends JFrame {
                 especificacao = "Vol: " + ((Bebida) item).getVolume() + " | Fornecedor: " + ((Bebida) item).getFornecedor();
             }
             
-            modelCardapio.addRow(new Object[]{item.getNome(), categoria, "R$ " + String.format("%.2f", item.getPreco()), especificacao});
+            modelCardapio.addRow(new Object[]{item.getNome(), categoria, "R$ " + 
+                                String.format("%.2f", item.getPreco()), especificacao});
         }
     }
 
     private void sincronizarTabelaClientes() {
         modelClientes.setRowCount(0);
-        for (int i = 0; i < listaClientes.size(); i++) {
-            Cliente c = listaClientes.get(i);
+        for (int i = 0; i < controller.getListaClientes().size(); i++) {
+            Cliente c = controller.getListaClientes().get(i);
             modelClientes.addRow(new Object[]{
                 "REG-" + (i + 101), 
                 c.getNome(), 
@@ -470,7 +400,7 @@ public class MainFrame extends JFrame {
 
     private void sincronizarTabelaPedidos() {
         modelPedidos.setRowCount(0);
-        for (Pedido p : listaPedidosAtivos) {
+        for (Pedido p : controller.getListaPedidosAtivos()) {
             StringBuilder descItens = new StringBuilder();
             double totalConta = 0;
 
@@ -481,7 +411,7 @@ public class MainFrame extends JFrame {
                     totalConta += ip.getItem().getPreco() * ip.getQuantidade();
                 }
             } else {
-                descItens.append("Nenhum prato/bebida consumido ainda.");
+                descItens.append("Nenhum item consumido ainda.");
             }
 
             modelPedidos.addRow(new Object[]{
@@ -492,7 +422,7 @@ public class MainFrame extends JFrame {
         }
     }
 
-    // ---- CONSTRUÇÃO E ESTILIZAÇÃO MANTIDAS FIÉIS AO SEU PROJETO ----
+    // ======================== COMPONENTES VISUAIS ========================
 
     private JPanel criarComponenteSidebar() {
         JPanel sidebar = new JPanel();
@@ -509,11 +439,13 @@ public class MainFrame extends JFrame {
             JButton btn = new JButton(botoesMenu[i]);
             btn.setAlignmentX(Component.CENTER_ALIGNMENT);
             btn.setMaximumSize(new Dimension(190, 42));
-            btn.setForeground(new Color(230, 230, 230));
+            btn.setForeground(Color.BLACK);
             btn.setBackground(new Color(45, 45, 45));
             btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             btn.setFocusPainted(false);
             btn.setBorderPainted(false);
+            btn.setOpaque(true);
+            btn.setContentAreaFilled(true);
             
             btn.addActionListener(e -> cardLayout.show(cardPanel, linkCard));
             
@@ -538,11 +470,13 @@ public class MainFrame extends JFrame {
 
     private void estilizarBotaoAcaoInferior(JButton botao) {
         botao.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        botao.setForeground(Color.WHITE);
-        botao.setBackground(new Color(0, 122, 255)); // Azul padrão macOS/iOS das capturas
+        botao.setForeground(Color.BLACK);
+        botao.setBackground(new Color(0, 122, 255));
         botao.setFocusPainted(false);
         botao.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
         botao.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        botao.setOpaque(true);
+        botao.setContentAreaFilled(true);
     }
 
     private JTable configEstiloTabela(JTable tabela) {
@@ -555,7 +489,7 @@ public class MainFrame extends JFrame {
         return tabela;
     }
 
-    // Painel Customizado para Cantos Arredondados usado no Dashboard
+    // Painel com cantos arredondados
     static class RoundedPanel extends JPanel {
         private int raioCurvatura;
         public RoundedPanel(int raio) {

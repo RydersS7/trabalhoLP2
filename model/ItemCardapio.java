@@ -26,6 +26,9 @@ public abstract class ItemCardapio {
     }
 
     public void setPreco(double preco) {
-        this.preco = preco;
+    if (preco <= 0) {
+        throw new IllegalArgumentException("Preço deve ser maior que zero");
     }
+    this.preco = preco;
+}
 }

@@ -29,8 +29,11 @@ public class Cliente {
     }
 
     public void setCpf(String cpf) {
-        this.cpf = cpf;
+    if (cpf == null || cpf.length() != 11) {
+        throw new IllegalArgumentException("CPF deve ter 11 dígitos");
     }
+    this.cpf = cpf;
+}
 
     public String getEmail() {
         return email;
@@ -45,6 +48,24 @@ public class Cliente {
     }
 
     public void setBonus(double bonus) {
-        this.bonus = bonus;
+    if (bonus < 0) {
+        throw new IllegalArgumentException("Bônus não pode ser negativo");
     }
+    this.bonus = bonus;
+    }
+     public void adicionarBonus(double valor) {
+        this.bonus += valor * 0.10;
+    }
+
+    public void usarBonus(double valor) {
+            bonus -= valor;
+    }
+    public boolean podeUsarBonus(double valor) {
+        return bonus >= valor;
+    }
+    public String obterResumo() {
+        return String.format("%s (CPF: %s) - Bônus: R$ %.2f", 
+                           nome, cpf, bonus);
+    }
+
 }

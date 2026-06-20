@@ -34,4 +34,7 @@ public class Comida extends ItemCardapio {
     public void setIngredientes(ArrayList<String> ingredientes) {
         this.ingredientes = ingredientes;
     }
+    public void adicionarIngrediente(String ingrediente) {
+        ingredientes.add(ingrediente);
+    }
 }

@@ -28,4 +28,7 @@ public class ItemPedido {
     public void setQuantidade(int quantidade) {
         this.quantidade = quantidade;
     }
+     public double calcularSubtotal() {
+        return item.getPreco() * quantidade;
+    }
 }
