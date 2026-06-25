@@ -1,16 +1,19 @@
 package model;
 
 import java.util.ArrayList;
+import java.time.LocalDateTime;
 
 public class Pedido {
     private Cliente cliente;
     private Mesa mesa;
-    private ArrayList<ItemPedido> itens; // Adicionado Generic <ItemPedido>
+    private ArrayList<ItemPedido> itens;
     private String status;
+    private LocalDateTime dataHoraAberta;
+    private LocalDateTime dataHoraFechada;
 
-    // Construtores
     public Pedido() {
         this.itens = new ArrayList<>();
+        this.dataHoraAberta = LocalDateTime.now();
     }
 
     public Pedido(Cliente cliente, Mesa mesa, ArrayList<ItemPedido> itens, String status) {
@@ -18,6 +21,7 @@ public class Pedido {
         this.mesa = mesa;
         this.itens = itens;
         this.status = status;
+        this.dataHoraAberta = LocalDateTime.now();
     }
 
     // Getters e Setters
@@ -90,5 +94,33 @@ public class Pedido {
     }
      public boolean estaVazio() {
         return itens.isEmpty();
+    }
+
+    public LocalDateTime getDataHoraAberta() {
+        return dataHoraAberta;
+    }
+
+    public LocalDateTime getDataHoraFechada() {
+        return dataHoraFechada;
+    }
+
+    public void setDataHoraFechada(LocalDateTime dataHora) {
+        this.dataHoraFechada = dataHora;
+    }
+
+    public long obterMinutosDePermanencia() {
+        if (dataHoraAberta == null) return 0;
+        LocalDateTime fim = (dataHoraFechada != null) ? dataHoraFechada : LocalDateTime.now();
+        return java.time.temporal.ChronoUnit.MINUTES.between(dataHoraAberta, fim);
+    }
+
+    public String obterTempoFormatado() {
+        long minutos = obterMinutosDePermanencia();
+        long horas = minutos / 60;
+        long mins = minutos % 60;
+        if (horas > 0) {
+            return horas + "h " + mins + "m";
+        }
+        return mins + "m";
     }
 }

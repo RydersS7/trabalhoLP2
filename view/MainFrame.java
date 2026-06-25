@@ -2,9 +2,9 @@ package view;
 
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.RoundRectangle2D;
 
 import controller.RestauranteController;
 import model.Mesa;
@@ -17,155 +17,169 @@ import model.ItemPedido;
 import model.StatusMesa;
 
 /**
- * MEZA - Sistema de Gestão de Restaurante
- * MainFrame.java — Interface Gráfica que chama o Controller
+ * MEZA - Sistema de Gestão de Restaurante (Versão 2 - Refatorada)
+ * MainFrame.java — Interface Gráfica com novo design
  */
 public class MainFrame extends JFrame {
 
-    // ---- REFERÊNCIA AO CONTROLLER ----
     private RestauranteController controller;
-
-    // ---- COMPONENTES GRÁFICOS ----
     private CardLayout cardLayout;
     private JPanel cardPanel;
+    
+    // Componentes Dashboard
     private JPanel gridMesasPanel;
+    private JLabel lblMesasOcupadas;
+    private JLabel lblMesasLivres;
+    private JLabel lblFaturamento;
+    private JLabel lblTempoMedio;
     
-    private JTable tabelaCardapio;
-    private DefaultTableModel modelCardapio;
+    // Componentes Cardápio
+    private JPanel painelCardapioItens;
+    private JTabbedPane abasCardapio;
     
-    private JTable tabelaClientes;
-    private DefaultTableModel modelClientes;
-    
-    private JTable tabelaPedidos;
-    private DefaultTableModel modelPedidos;
+    // Componentes Cliente
+    private JLabel lblNomeCliente;
+    private JLabel lblCPFCliente;
+    private JLabel lblEmailCliente;
+    private JLabel lblBonusCliente;
+    private JLabel lblTotalGastoCliente;
+    private JPanel painelHistoricoPedidos;
 
-    /**
-     * Construtor que recebe o controller
-     */
     public MainFrame(RestauranteController controller) {
         this.controller = controller;
-        
-        // 1. Monta a interface
         initComponents();
-        
-        // 2. Carrega os dados iniciais
         atualizarTodos();
     }
 
-    /**
-     * Inicializa todos os componentes visuais
-     */
     private void initComponents() {
         setTitle("MEZA - Gestão de Restaurante");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1100, 650);
+        setSize(1200, 700);
         setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(new Color(245, 245, 245));
+        mainPanel.setBackground(new Color(240, 240, 240));
 
-        // Barra superior e sidebar
-        JPanel topbar = criarComponenteTopbar();
-        JPanel sidebar = criarComponenteSidebar();
-        
+        // Topbar
+        JPanel topbar = criarTopbar();
         mainPanel.add(topbar, BorderLayout.NORTH);
+
+        // Sidebar
+        JPanel sidebar = criarSidebar();
         mainPanel.add(sidebar, BorderLayout.WEST);
 
-        // CardLayout para as diferentes telas
+        // CardLayout
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
-        cardPanel.setBackground(new Color(245, 245, 245));
+        cardPanel.setBackground(new Color(240, 240, 240));
 
-        // Inicializa as tabelas
-        modelCardapio = new DefaultTableModel(new Object[]{"Item", "Categoria", "Preço Base", "Especificação"}, 0);
-        tabelaCardapio = configEstiloTabela(new JTable(modelCardapio));
-
-        modelClientes = new DefaultTableModel(new Object[]{"Registro ID", "Nome Completo", "Email e Bônus"}, 0);
-        tabelaClientes = configEstiloTabela(new JTable(modelClientes));
-
-        modelPedidos = new DefaultTableModel(new Object[]{"Mesa Origem", "Itens Solicitados", "Valor Total"}, 0);
-        tabelaPedidos = configEstiloTabela(new JTable(modelPedidos));
-
-        // Adiciona as telas ao CardLayout
-        cardPanel.add(montarPainelDashboard(), "DashboardPanel");
-        cardPanel.add(montarPainelPedidos(), "OrderPanel");
-        cardPanel.add(montarPainelCardapio(), "MenuPanel");
-        cardPanel.add(montarPainelClientes(), "CustomersPanel");
+        cardPanel.add(montarPainelDashboard(), "Dashboard");
+        cardPanel.add(montarPainelCardapio(), "Cardapio");
+        cardPanel.add(montarPainelClientes(), "Clientes");
 
         mainPanel.add(cardPanel, BorderLayout.CENTER);
         add(mainPanel);
     }
 
-    /**
-     * Atualiza todos os dados exibidos
-     */
-    private void atualizarTodos() {
-        atualizarExibicaoMesas();
-        sincronizarTabelaCardapio();
-        sincronizarTabelaClientes();
-        sincronizarTabelaPedidos();
-    }
-
-    // ======================== DASHBOARD (Mesas) ========================
+    // ======================== DASHBOARD ========================
 
     private JPanel montarPainelDashboard() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(new Color(245, 245, 245));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel lblTitulo = new JLabel("Status das Mesas em Tempo Real");
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblTitulo.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
-        panel.add(lblTitulo, BorderLayout.NORTH);
+        // Título
+        JLabel titulo = new JLabel("Visão Geral");
+        titulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        panel.add(titulo, BorderLayout.NORTH);
 
-        gridMesasPanel = new JPanel(new GridLayout(0, 4, 15, 15));
-        gridMesasPanel.setBackground(Color.WHITE);
-        gridMesasPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
+        // Painel com métricas
+        JPanel panelMetricas = criarPainelMetricas();
+        
+        // Painel com grid de mesas
+        JPanel panelMesas = new JPanel(new BorderLayout());
+        panelMesas.setBackground(new Color(245, 245, 245));
+        panelMesas.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
-        JScrollPane scroll = new JScrollPane(gridMesasPanel);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
-        panel.add(scroll, BorderLayout.CENTER);
+        JLabel lblMesas = new JLabel("Mesas");
+        lblMesas.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        panelMesas.add(lblMesas, BorderLayout.NORTH);
+
+        gridMesasPanel = new JPanel(new GridLayout(0, 5, 15, 15));
+        gridMesasPanel.setBackground(new Color(245, 245, 245));
+        
+        JScrollPane scrollMesas = new JScrollPane(gridMesasPanel);
+        scrollMesas.setBorder(BorderFactory.createEmptyBorder());
+        scrollMesas.getVerticalScrollBar().setUnitIncrement(20);
+        panelMesas.add(scrollMesas, BorderLayout.CENTER);
+
+        // Adiciona tudo ao painel principal
+        JPanel topSection = new JPanel(new BorderLayout());
+        topSection.setBackground(new Color(245, 245, 245));
+        topSection.add(panelMetricas, BorderLayout.NORTH);
+        topSection.add(panelMesas, BorderLayout.CENTER);
+
+        panel.add(topSection, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel criarPainelMetricas() {
+        JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
+        panel.setBackground(new Color(245, 245, 245));
+        panel.setPreferredSize(new Dimension(0, 120));
+
+        // Card Mesas Ocupadas
+        JPanel cardOcupadas = criarCardMetrica("Mesas ocupadas", "");
+        lblMesasOcupadas = (JLabel) cardOcupadas.getComponent(1);
+        panel.add(cardOcupadas);
+
+        // Card Mesas Livres
+        JPanel cardLivres = criarCardMetrica("Mesas livres", "");
+        lblMesasLivres = (JLabel) cardLivres.getComponent(1);
+        panel.add(cardLivres);
+
+        // Card Faturamento
+        JPanel cardFatura = criarCardMetrica("Faturamento hoje", "");
+        lblFaturamento = (JLabel) cardFatura.getComponent(1);
+        panel.add(cardFatura);
+
+        // Card Tempo Médio
+        JPanel cardTempo = criarCardMetrica("Tempo médio", "");
+        lblTempoMedio = (JLabel) cardTempo.getComponent(1);
+        panel.add(cardTempo);
 
         return panel;
+    }
+
+    private JPanel criarCardMetrica(String titulo, String valor) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230), 1));
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+
+        JLabel lblTitulo = new JLabel(titulo);
+        lblTitulo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblTitulo.setForeground(new Color(150, 150, 150));
+
+        JLabel lblValor = new JLabel(valor);
+        lblValor.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        lblValor.setForeground(new Color(50, 50, 50));
+
+        card.add(lblTitulo, BorderLayout.NORTH);
+        card.add(lblValor, BorderLayout.CENTER);
+
+        return card;
     }
 
     private void atualizarExibicaoMesas() {
         gridMesasPanel.removeAll();
 
         for (Mesa mesa : controller.getListaMesas()) {
-            RoundedPanel cardMesa = new RoundedPanel(12);
-            cardMesa.setLayout(new BorderLayout());
-            cardMesa.setPreferredSize(new Dimension(130, 110));
-            cardMesa.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-            // Coloração baseada no status
-            if (mesa.getStatus().equals(StatusMesa.LIVRE)) {
-                cardMesa.setBackground(new Color(235, 247, 235));
-                cardMesa.setBorder(BorderFactory.createLineBorder(new Color(160, 215, 160), 1));
-            } else {
-                cardMesa.setBackground(new Color(255, 235, 230));
-                cardMesa.setBorder(BorderFactory.createLineBorder(new Color(250, 170, 150), 1));
-            }
-
-            JLabel lblNum = new JLabel("MESA " + mesa.getNumero(), SwingConstants.CENTER);
-            lblNum.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            lblNum.setForeground(new Color(50, 50, 50));
-
-            JLabel lblStatus = new JLabel(mesa.getStatus().toString(), SwingConstants.CENTER);
-            lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            lblStatus.setForeground(mesa.getStatus().equals(StatusMesa.LIVRE) ? new Color(40, 120, 40) : new Color(180, 50, 50));
-
-            cardMesa.add(lblNum, BorderLayout.CENTER);
-            cardMesa.add(lblStatus, BorderLayout.SOUTH);
-
-            // Clique para abrir mesa
-            final Mesa mesaFinal = mesa;
-            cardMesa.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    processarCliqueMesa(mesaFinal);
-                }
-            });
-
+            JPanel cardMesa = criarCardMesa(mesa);
             gridMesasPanel.add(cardMesa);
         }
 
@@ -173,101 +187,305 @@ public class MainFrame extends JFrame {
         gridMesasPanel.repaint();
     }
 
-    private void processarCliqueMesa(Mesa mesa) {
-        if (mesa.getStatus().equals(StatusMesa.LIVRE)) {
-            int resposta = JOptionPane.showConfirmDialog(this, 
-                    "Deseja iniciar uma nova conta para a Mesa " + mesa.getNumero() + "?", 
-                    "Abertura de Mesa", JOptionPane.YES_NO_OPTION);
+    private JPanel criarCardMesa(Mesa mesa) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(mesa.getStatus() == StatusMesa.LIVRE ? 
+            new Color(230, 245, 230) : new Color(255, 240, 235));
+        card.setBorder(BorderFactory.createLineBorder(
+            mesa.getStatus() == StatusMesa.LIVRE ? 
+            new Color(150, 200, 150) : new Color(220, 150, 120), 2
+        ));
+        card.setPreferredSize(new Dimension(150, 140));
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        JLabel lblNumero = new JLabel("MESA " + mesa.getNumero());
+        lblNumero.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        lblNumero.setHorizontalAlignment(SwingConstants.CENTER);
+        lblNumero.setForeground(new Color(50, 50, 50));
+
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setBackground(mesa.getStatus() == StatusMesa.LIVRE ? 
+            new Color(230, 245, 230) : new Color(255, 240, 235));
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        if (mesa.getClienteAtual() != null && mesa.getPedidoAtual() != null) {
+            JLabel lblCliente = new JLabel(mesa.getClienteAtual().getNome());
+            lblCliente.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            lblCliente.setHorizontalAlignment(SwingConstants.CENTER);
             
-            if (resposta == JOptionPane.YES_OPTION) {
-                try {
-                    controller.abrirMesa(mesa.getNumero(),mesa.getClienteAtual());
-                    atualizarTodos();
-                    JOptionPane.showMessageDialog(this, "Mesa " + mesa.getNumero() + " aberta com sucesso!");
-                } catch (IllegalStateException e) {
-                    JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
-                }
-            }
+            String tempo = mesa.getPedidoAtual().obterTempoFormatado();
+            JLabel lblTempo = new JLabel("⏱ " + tempo);
+            lblTempo.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+            lblTempo.setHorizontalAlignment(SwingConstants.CENTER);
+            lblTempo.setForeground(new Color(100, 100, 100));
+
+            centerPanel.add(lblCliente, BorderLayout.NORTH);
+            centerPanel.add(lblTempo, BorderLayout.CENTER);
         } else {
-            JOptionPane.showMessageDialog(this, 
-                    "A Mesa " + mesa.getNumero() + " já está ativa. Gerencie o consumo na aba de Pedidos.", 
-                    "Aviso", JOptionPane.INFORMATION_MESSAGE);
+            JLabel lblStatus = new JLabel(mesa.getStatus().toString());
+            lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            lblStatus.setHorizontalAlignment(SwingConstants.CENTER);
+            lblStatus.setForeground(new Color(100, 150, 100));
+            centerPanel.add(lblStatus, BorderLayout.CENTER);
+        }
+
+        card.add(lblNumero, BorderLayout.NORTH);
+        card.add(centerPanel, BorderLayout.CENTER);
+
+        final Mesa mesaFinal = mesa;
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                processarCliqueMesa(mesaFinal);
+            }
+        });
+
+        return card;
+    }
+
+    private void processarCliqueMesa(Mesa mesa) {
+        if (mesa.getStatus() == StatusMesa.LIVRE) {
+            // Diálogo para seleção de cliente
+            JDialog dialogCliente = new JDialog(this, "Selecionar Cliente", true);
+            dialogCliente.setSize(400, 200);
+            dialogCliente.setLocationRelativeTo(this);
+            dialogCliente.setResizable(false);
+
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+            JLabel lbl = new JLabel("Selecione um cliente ou crie um novo:");
+            panel.add(lbl, BorderLayout.NORTH);
+
+            String[] clientes = new String[controller.getListaClientes().size() + 1];
+            clientes[0] = "< Novo Cliente >";
+            for (int i = 0; i < controller.getListaClientes().size(); i++) {
+                clientes[i + 1] = controller.getListaClientes().get(i).getNome();
+            }
+
+            JComboBox<String> combo = new JComboBox<>(clientes);
+            panel.add(combo, BorderLayout.CENTER);
+
+            JPanel panelBotoes = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            JButton btnOk = new JButton("Confirmar");
+            JButton btnCancelar = new JButton("Cancelar");
+
+            panelBotoes.add(btnOk);
+            panelBotoes.add(btnCancelar);
+            panel.add(panelBotoes, BorderLayout.SOUTH);
+
+            btnOk.addActionListener(e -> {
+                int idx = combo.getSelectedIndex();
+                Cliente clienteSelecionado = null;
+
+                if (idx == 0) {
+                    // Novo cliente
+                    clienteSelecionado = criarNovoCliente();
+                } else {
+                    clienteSelecionado = controller.getListaClientes().get(idx - 1);
+                }
+
+                if (clienteSelecionado != null) {
+                    try {
+                        controller.abrirMesa(mesa.getNumero(), clienteSelecionado);
+                        atualizarTodos();
+                        JOptionPane.showMessageDialog(MainFrame.this, 
+                            "Mesa " + mesa.getNumero() + " aberta para " + clienteSelecionado.getNome());
+                    } catch (IllegalStateException ex) {
+                        JOptionPane.showMessageDialog(MainFrame.this, ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                dialogCliente.dispose();
+            });
+
+            btnCancelar.addActionListener(e -> dialogCliente.dispose());
+
+            dialogCliente.add(panel);
+            dialogCliente.setVisible(true);
+        } else {
+            // Mesa ocupada - mostrar opções
+            JDialog dialogMesa = new JDialog(this, "Gerenciar Mesa", true);
+            dialogMesa.setSize(350, 250);
+            dialogMesa.setLocationRelativeTo(this);
+            dialogMesa.setResizable(false);
+
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+            JLabel lbl = new JLabel("Mesa " + mesa.getNumero() + " - " + mesa.getClienteAtual().getNome());
+            lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            panel.add(lbl, BorderLayout.NORTH);
+
+            JPanel btnPanel = new JPanel(new GridLayout(3, 1, 0, 10));
+            
+            JButton btnAdd = new JButton("Adicionar Item");
+            JButton btnFechar = new JButton("Fechar Mesa & Pagar");
+            JButton btnVer = new JButton("Ver Pedido");
+
+            btnAdd.addActionListener(e -> {
+                adicionarItemAMesa(mesa);
+                dialogMesa.dispose();
+                atualizarTodos();
+            });
+
+            btnFechar.addActionListener(e -> {
+                finalizarPagamento(mesa);
+                dialogMesa.dispose();
+                atualizarTodos();
+            });
+
+            btnVer.addActionListener(e -> {
+                visualizarPedido(mesa);
+            });
+
+            btnPanel.add(btnAdd);
+            btnPanel.add(btnVer);
+            btnPanel.add(btnFechar);
+            panel.add(btnPanel, BorderLayout.CENTER);
+
+            dialogMesa.add(panel);
+            dialogMesa.setVisible(true);
         }
     }
 
-    // ======================== PEDIDOS ========================
+    private Cliente criarNovoCliente() {
+        JDialog dialog = new JDialog(this, "Novo Cliente", true);
+        dialog.setSize(400, 300);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
 
-    private JPanel montarPainelPedidos() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
+        JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        JLabel titulo = new JLabel("Monitor de Contas e Pedidos Ativos");
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titulo.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
-        panel.add(titulo, BorderLayout.NORTH);
-
-        JScrollPane scroll = new JScrollPane(tabelaPedidos);
-        scroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(230, 230, 230)));
-        panel.add(scroll, BorderLayout.CENTER);
-
-        JPanel bottomContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 10));
-        bottomContainer.setBackground(Color.WHITE);
-
-        JButton btnLancarItem = new JButton("+ Adicionar Item a uma Mesa");
-        estilizarBotaoAcaoInferior(btnLancarItem);
-        btnLancarItem.addActionListener(e -> executarLancamentoItemPedido());
+        JLabel lblNome = new JLabel("Nome:");
+        JTextField txtNome = new JTextField();
+        JLabel lblCPF = new JLabel("CPF:");
+        JTextField txtCPF = new JTextField();
+        JLabel lblEmail = new JLabel("Email:");
+        JTextField txtEmail = new JTextField();
         
-        bottomContainer.add(btnLancarItem);
-        panel.add(bottomContainer, BorderLayout.SOUTH);
+        JButton btnSalvar = new JButton("Salvar");
+        JButton btnCancelar = new JButton("Cancelar");
 
-        return panel;
+        panel.add(lblNome);
+        panel.add(txtNome);
+        panel.add(lblCPF);
+        panel.add(txtCPF);
+        panel.add(lblEmail);
+        panel.add(txtEmail);
+        panel.add(btnSalvar);
+        panel.add(btnCancelar);
+
+        final Cliente[] clienteSalvo = new Cliente[1];
+
+        btnSalvar.addActionListener(e -> {
+            if (txtNome.getText().isEmpty() || txtCPF.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Preencha os campos obrigatórios");
+                return;
+            }
+            controller.cadastrarCliente(txtNome.getText(), txtCPF.getText(), txtEmail.getText());
+            clienteSalvo[0] = controller.buscarClientePorCpf(txtCPF.getText());
+            dialog.dispose();
+        });
+
+        btnCancelar.addActionListener(e -> dialog.dispose());
+
+        dialog.add(panel);
+        dialog.setVisible(true);
+
+        return clienteSalvo[0];
     }
 
-    private void executarLancamentoItemPedido() {
-        if (controller.getListaPedidosAtivos().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Não há mesas com contas abertas.");
-            return;
-        }
+    private void adicionarItemAMesa(Mesa mesa) {
         if (controller.getListaCardapio().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "O cardápio está vazio. Cadastre itens primeiro.");
+            JOptionPane.showMessageDialog(this, "Cardápio vazio!");
             return;
         }
 
-        // Seleção da mesa
-        String[] mesasAtivas = new String[controller.getListaPedidosAtivos().size()];
-        for (int i = 0; i < controller.getListaPedidosAtivos().size(); i++) {
-            mesasAtivas[i] = "Mesa " + controller.getListaPedidosAtivos().get(i).getMesa().getNumero();
-        }
-        String mesaSelecionada = (String) JOptionPane.showInputDialog(this, "Selecione a mesa:", 
-                "Lançar Item", JOptionPane.QUESTION_MESSAGE, null, mesasAtivas, mesasAtivas[0]);
-        if (mesaSelecionada == null) return;
-
-        int numMesa = Integer.parseInt(mesaSelecionada.replaceAll("[^0-9]", ""));
-
-        // Seleção do item
         String[] itens = new String[controller.getListaCardapio().size()];
         for (int i = 0; i < controller.getListaCardapio().size(); i++) {
-            itens[i] = controller.getListaCardapio().get(i).getNome() + " (R$ " + 
-                       controller.getListaCardapio().get(i).getPreco() + ")";
+            ItemCardapio item = controller.getListaCardapio().get(i);
+            itens[i] = item.getNome() + " (R$ " + String.format("%.2f", item.getPreco()) + ")";
         }
-        String itemSelecionado = (String) JOptionPane.showInputDialog(this, "Selecione o item:", 
-                "Lançar Item", JOptionPane.QUESTION_MESSAGE, null, itens, itens[0]);
-        if (itemSelecionado == null) return;
 
-        int idxItem = java.util.Arrays.asList(itens).indexOf(itemSelecionado);
-        ItemCardapio item = controller.getListaCardapio().get(idxItem);
+        String itemSel = (String) JOptionPane.showInputDialog(this, "Selecione o item:",
+            "Adicionar Item", JOptionPane.QUESTION_MESSAGE, null, itens, itens[0]);
+        
+        if (itemSel == null) return;
 
-        // Quantidade
-        String qtdStr = JOptionPane.showInputDialog(this, "Quantidade:", "1");
-        if (qtdStr == null) return;
-        int quantidade = Integer.parseInt(qtdStr);
+        int idx = java.util.Arrays.asList(itens).indexOf(itemSel);
+        ItemCardapio item = controller.getListaCardapio().get(idx);
+
+        String qtd = JOptionPane.showInputDialog(this, "Quantidade:", "1");
+        if (qtd == null) return;
 
         try {
-            controller.adicionarItemAoPedido(numMesa, item, quantidade);
-            atualizarTodos();
-            JOptionPane.showMessageDialog(this, "Item adicionado com sucesso!");
-        } catch (IllegalStateException e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            int quantidade = Integer.parseInt(qtd);
+            controller.adicionarItemAoPedido(mesa.getNumero(), item, quantidade);
+            JOptionPane.showMessageDialog(this, "Item adicionado!");
+        } catch (NumberFormatException | IllegalStateException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void visualizarPedido(Mesa mesa) {
+        Pedido pedido = controller.buscarPedidoDaMesa(mesa.getNumero());
+        if (pedido == null || pedido.getItens().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nenhum item no pedido");
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder("PEDIDO DA MESA " + mesa.getNumero() + "\n\n");
+        double total = 0;
+        for (ItemPedido ip : pedido.getItens()) {
+            sb.append(ip.getItem().getNome()).append(" x").append(ip.getQuantidade())
+                .append(" = R$ ").append(String.format("%.2f", ip.calcularSubtotal())).append("\n");
+            total += ip.calcularSubtotal();
+        }
+        sb.append("\nTOTAL: R$ ").append(String.format("%.2f", total));
+
+        JOptionPane.showMessageDialog(this, sb.toString(), "Pedido", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void finalizarPagamento(Mesa mesa) {
+        Pedido pedido = controller.buscarPedidoDaMesa(mesa.getNumero());
+        if (pedido == null || pedido.getItens().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nenhum item para pagar");
+            return;
+        }
+
+        double total = pedido.calcularTotal();
+        Cliente cliente = mesa.getClienteAtual();
+
+        String msg = "RESUMO DO PAGAMENTO\n\n";
+        msg += "Mesa: " + mesa.getNumero() + "\n";
+        msg += "Cliente: " + (cliente != null ? cliente.getNome() : "Sem cliente") + "\n";
+        msg += "Total: R$ " + String.format("%.2f", total) + "\n";
+        if (cliente != null && cliente.getBonus() > 0) {
+            msg += "Bônus disponível: R$ " + String.format("%.2f", cliente.getBonus()) + "\n\n";
+            msg += "Deseja usar o bônus?";
+        }
+
+        int resposta = JOptionPane.showConfirmDialog(this, msg, "Pagamento", JOptionPane.YES_NO_CANCEL_OPTION);
+        
+        boolean usarBonus = false;
+        if (resposta == JOptionPane.YES_OPTION && cliente != null && cliente.getBonus() > 0) {
+            usarBonus = true;
+        } else if (resposta == JOptionPane.CANCEL_OPTION) {
+            return;
+        }
+
+        String[] opcoesPagamento = {"Débito", "Crédito", "Dinheiro"};
+        String tipoPagamento = (String) JOptionPane.showInputDialog(this, "Forma de pagamento:",
+            "Pagamento", JOptionPane.QUESTION_MESSAGE, null, opcoesPagamento, opcoesPagamento[0]);
+
+        if (tipoPagamento != null) {
+            try {
+                controller.efetuarPagamento(mesa.getNumero(), tipoPagamento, usarBonus);
+                JOptionPane.showMessageDialog(this, "Pagamento realizado com sucesso!");
+            } catch (IllegalStateException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -275,234 +493,316 @@ public class MainFrame extends JFrame {
 
     private JPanel montarPainelCardapio() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(new Color(245, 245, 245));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel titulo = new JLabel("Cardápio de Alimentos e Bebidas");
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titulo.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        JLabel titulo = new JLabel("Cardápio");
+        titulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
         panel.add(titulo, BorderLayout.NORTH);
 
-        JScrollPane scroll = new JScrollPane(tabelaCardapio);
-        scroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(230, 230, 230)));
-        panel.add(scroll, BorderLayout.CENTER);
+        abasCardapio = new JTabbedPane();
+        abasCardapio.setBackground(Color.WHITE);
 
-        JPanel bottomContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 10));
-        bottomContainer.setBackground(Color.WHITE);
+        JPanel abaComidas = criarAbaCardapio("Comidas", true);
+        JPanel abaBebidas = criarAbaCardapio("Bebidas", false);
 
-        JButton btnAddCardapio = new JButton("+ Adicionar ao Cardápio");
-        estilizarBotaoAcaoInferior(btnAddCardapio);
-        btnAddCardapio.addActionListener(e -> executarInclusaoCardapio());
-        
-        bottomContainer.add(btnAddCardapio);
-        panel.add(bottomContainer, BorderLayout.SOUTH);
+        abasCardapio.addTab("Comidas", abaComidas);
+        abasCardapio.addTab("Bebidas", abaBebidas);
+
+        panel.add(abasCardapio, BorderLayout.CENTER);
 
         return panel;
     }
 
-    private void executarInclusaoCardapio() {
-        String[] categorias = {"Comida", "Bebida"};
-        int tipoSelec = JOptionPane.showOptionDialog(this, "Selecione a categoria:", 
-                "Cadastro de Cardápio", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, 
-                null, categorias, categorias[0]);
+    private JPanel criarAbaCardapio(String categoria, boolean ehComida) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(245, 245, 245));
 
-        if (tipoSelec == -1) return;
+        painelCardapioItens = new JPanel(new GridLayout(0, 3, 15, 15));
+        painelCardapioItens.setBackground(new Color(245, 245, 245));
+        painelCardapioItens.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        String nome = JOptionPane.showInputDialog(this, "Nome do item:");
-        if (nome == null || nome.trim().isEmpty()) return;
+        JScrollPane scroll = new JScrollPane(painelCardapioItens);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getVerticalScrollBar().setUnitIncrement(20);
 
-        String precoStr = JOptionPane.showInputDialog(this, "Preço Unitário:");
-        if (precoStr == null) return;
-        double preco = Double.parseDouble(precoStr.replace(",", "."));
+        panel.add(scroll, BorderLayout.CENTER);
 
-        if (tipoSelec == 0) {
-            String descricao = JOptionPane.showInputDialog(this, "Descrição dos Ingredientes:");
-            controller.adicionarComida(nome, preco, descricao);
-        } else {
-            String fornecedor = JOptionPane.showInputDialog(this, "Fornecedor:");
-            String volume = JOptionPane.showInputDialog(this, "Volume/Tamanho:");
-            controller.adicionarBebida(nome, preco, fornecedor, volume);
+        JPanel panelBotao = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panelBotao.setBackground(new Color(245, 245, 245));
+        JButton btnAdd = new JButton("+ Adicionar Item");
+        btnAdd.addActionListener(e -> adicionarItemCardapio(ehComida));
+        panelBotao.add(btnAdd);
+        panel.add(panelBotao, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void adicionarItemCardapio(boolean ehComida) {
+        String tipo = ehComida ? "Comida" : "Bebida";
+        
+        String nome = JOptionPane.showInputDialog(this, "Nome do " + tipo + ":");
+        if (nome == null || nome.isEmpty()) return;
+
+        String preco = JOptionPane.showInputDialog(this, "Preço:");
+        if (preco == null) return;
+
+        try {
+            double precoDbl = Double.parseDouble(preco.replace(",", "."));
+            
+            if (ehComida) {
+                String descricao = JOptionPane.showInputDialog(this, "Descrição/Ingredientes:");
+                controller.adicionarComida(nome, precoDbl, descricao);
+            } else {
+                String fornecedor = JOptionPane.showInputDialog(this, "Fornecedor:");
+                String volume = JOptionPane.showInputDialog(this, "Volume:");
+                controller.adicionarBebida(nome, precoDbl, fornecedor, volume);
+            }
+            
+            atualizarTodos();
+            JOptionPane.showMessageDialog(this, "Item adicionado!");
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Preço inválido", "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void atualizarCardapio() {
+        painelCardapioItens.removeAll();
+
+        for (ItemCardapio item : controller.getListaCardapio()) {
+            boolean ehComida = item instanceof Comida;
+            JPanel cardItem = criarCardItem(item, ehComida);
+            painelCardapioItens.add(cardItem);
         }
 
-        atualizarTodos();
-        JOptionPane.showMessageDialog(this, "Item adicionado ao cardápio!");
+        painelCardapioItens.revalidate();
+        painelCardapioItens.repaint();
+    }
+
+    private JPanel criarCardItem(ItemCardapio item, boolean ehComida) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230), 1));
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        card.setPreferredSize(new Dimension(250, 200));
+
+        JLabel lblNome = new JLabel(item.getNome());
+        lblNome.setFont(new Font("Segoe UI", Font.BOLD, 13));
+
+        JLabel lblPreco = new JLabel("R$ " + String.format("%.2f", item.getPreco()));
+        lblPreco.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblPreco.setForeground(new Color(220, 100, 50));
+
+        JLabel lblDesc = new JLabel();
+        lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        lblDesc.setForeground(new Color(120, 120, 120));
+
+        if (ehComida) {
+            Comida c = (Comida) item;
+            lblDesc.setText("<html>Ingredientes: " + (c.getDescricao() != null ? c.getDescricao() : "N/A") + "</html>");
+        } else {
+            Bebida b = (Bebida) item;
+            lblDesc.setText("Vol: " + b.getVolume() + " | " + b.getFornecedor());
+        }
+
+        card.add(lblNome, BorderLayout.NORTH);
+        card.add(lblPreco, BorderLayout.WEST);
+        card.add(lblDesc, BorderLayout.CENTER);
+
+        return card;
     }
 
     // ======================== CLIENTES ========================
 
     private JPanel montarPainelClientes() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(new Color(245, 245, 245));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel titulo = new JLabel("Controle de Clientes Cadastrados");
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titulo.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        JLabel titulo = new JLabel("Clientes");
+        titulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
         panel.add(titulo, BorderLayout.NORTH);
 
-        JScrollPane scroll = new JScrollPane(tabelaClientes);
-        scroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(230, 230, 230)));
-        panel.add(scroll, BorderLayout.CENTER);
+        // Painel de seleção
+        JPanel panelSelecao = new JPanel(new BorderLayout());
+        panelSelecao.setBackground(new Color(245, 245, 245));
+        panelSelecao.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
 
-        JPanel bottomContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 10));
-        bottomContainer.setBackground(Color.WHITE);
+        JLabel lbl = new JLabel("Selecione um cliente:");
+        String[] nomes = new String[controller.getListaClientes().size()];
+        for (int i = 0; i < controller.getListaClientes().size(); i++) {
+            nomes[i] = controller.getListaClientes().get(i).getNome();
+        }
+        JComboBox<String> combo = new JComboBox<>(nomes);
+        combo.addActionListener(e -> {
+            if (combo.getSelectedIndex() >= 0) {
+                Cliente c = controller.getListaClientes().get(combo.getSelectedIndex());
+                exibirClienteDetalhe(c);
+            }
+        });
 
-        JButton btnAddCliente = new JButton("+ Adicionar Novo Cliente");
-        estilizarBotaoAcaoInferior(btnAddCliente);
-        btnAddCliente.addActionListener(e -> executarInclusaoCliente());
-        
-        bottomContainer.add(btnAddCliente);
-        panel.add(bottomContainer, BorderLayout.SOUTH);
+        panelSelecao.add(lbl, BorderLayout.WEST);
+        panelSelecao.add(combo, BorderLayout.CENTER);
+        panel.add(panelSelecao, BorderLayout.NORTH);
+
+        // Painel de detalhes
+        JPanel panelDetalhes = new JPanel(new BorderLayout());
+        panelDetalhes.setBackground(Color.WHITE);
+        panelDetalhes.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230), 1));
+        panelDetalhes.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+
+        JPanel panelInfo = new JPanel(new GridLayout(5, 1, 0, 10));
+        panelInfo.setBackground(Color.WHITE);
+
+        lblNomeCliente = new JLabel("Nome: ");
+        lblCPFCliente = new JLabel("CPF: ");
+        lblEmailCliente = new JLabel("Email: ");
+        lblBonusCliente = new JLabel("Bônus: ");
+        lblTotalGastoCliente = new JLabel("Total gasto: ");
+
+        panelInfo.add(lblNomeCliente);
+        panelInfo.add(lblCPFCliente);
+        panelInfo.add(lblEmailCliente);
+        panelInfo.add(lblBonusCliente);
+        panelInfo.add(lblTotalGastoCliente);
+
+        panelDetalhes.add(panelInfo, BorderLayout.NORTH);
+
+        // Histórico
+        painelHistoricoPedidos = new JPanel(new GridLayout(0, 1, 0, 10));
+        painelHistoricoPedidos.setBackground(Color.WHITE);
+        JScrollPane scrollHistorico = new JScrollPane(painelHistoricoPedidos);
+        scrollHistorico.setBorder(BorderFactory.createEmptyBorder());
+
+        JLabel lblHistorico = new JLabel("Histórico de Pedidos");
+        lblHistorico.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        JPanel panelHistoricoContainer = new JPanel(new BorderLayout());
+        panelHistoricoContainer.setBackground(Color.WHITE);
+        panelHistoricoContainer.add(lblHistorico, BorderLayout.NORTH);
+        panelHistoricoContainer.add(scrollHistorico, BorderLayout.CENTER);
+
+        panelDetalhes.add(panelHistoricoContainer, BorderLayout.CENTER);
+        panel.add(panelDetalhes, BorderLayout.CENTER);
+
+        // Botão novo cliente
+        JPanel panelBotao = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelBotao.setBackground(new Color(245, 245, 245));
+        JButton btnNovo = new JButton("+ Novo Cliente");
+        btnNovo.addActionListener(e -> {
+            criarNovoCliente();
+            atualizarTodos();
+        });
+        panelBotao.add(btnNovo);
+        panel.add(panelBotao, BorderLayout.SOUTH);
+
+        if (combo.getItemCount() > 0) {
+            combo.setSelectedIndex(0);
+            exibirClienteDetalhe(controller.getListaClientes().get(0));
+        }
 
         return panel;
     }
 
-    private void executarInclusaoCliente() {
-        String nome = JOptionPane.showInputDialog(this, "Nome completo:");
-        if (nome == null || nome.trim().isEmpty()) return;
+    private void exibirClienteDetalhe(Cliente cliente) {
+        lblNomeCliente.setText("Nome: " + cliente.getNome());
+        lblCPFCliente.setText("CPF: " + cliente.getCpf());
+        lblEmailCliente.setText("Email: " + cliente.getEmail());
+        lblBonusCliente.setText("Bônus: R$ " + String.format("%.2f", cliente.getBonus()));
+        lblTotalGastoCliente.setText("Total gasto: R$ " + String.format("%.2f", cliente.getTotalGasto()));
 
-        String cpf = JOptionPane.showInputDialog(this, "CPF (apenas números):");
-        String email = JOptionPane.showInputDialog(this, "Email:");
+        painelHistoricoPedidos.removeAll();
+        for (Pedido pedido : cliente.getHistoricoPedidos()) {
+            JPanel panelPedido = new JPanel(new BorderLayout());
+            panelPedido.setBackground(new Color(250, 250, 250));
+            panelPedido.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230), 1));
+            panelPedido.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            ));
 
-        controller.cadastrarCliente(nome, cpf, email);
-        atualizarTodos();
-        JOptionPane.showMessageDialog(this, "Cliente cadastrado com sucesso!");
+            String msg = "Mesa " + pedido.getMesa().getNumero() + " | " + 
+                         pedido.getItens().size() + " itens | R$ " + 
+                         String.format("%.2f", pedido.calcularTotal()) + " | Status: " + pedido.getStatus();
+
+            JLabel lbl = new JLabel(msg);
+            lbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            panelPedido.add(lbl, BorderLayout.CENTER);
+
+            painelHistoricoPedidos.add(panelPedido);
+        }
+
+        painelHistoricoPedidos.revalidate();
+        painelHistoricoPedidos.repaint();
     }
 
-    // ======================== SINCRONIZAÇÃO DE TABELAS ========================
+    // ======================== ATUALIZAÇÃO ========================
 
-    private void sincronizarTabelaCardapio() {
-        modelCardapio.setRowCount(0);
-        for (ItemCardapio item : controller.getListaCardapio()) {
-            String categoria = (item instanceof Comida) ? "Comida" : "Bebida";
-            String especificacao = "";
-            
-            if (item instanceof Comida) {
-                especificacao = "Ingredientes: " + ((Comida) item).getDescricao();
-            } else if (item instanceof Bebida) {
-                especificacao = "Vol: " + ((Bebida) item).getVolume() + " | Fornecedor: " + ((Bebida) item).getFornecedor();
-            }
-            
-            modelCardapio.addRow(new Object[]{item.getNome(), categoria, "R$ " + 
-                                String.format("%.2f", item.getPreco()), especificacao});
-        }
-    }
+    private void atualizarTodos() {
+        // Métricas
+        lblMesasOcupadas.setText(String.valueOf(controller.contarMesasOcupadas()));
+        lblMesasLivres.setText(String.valueOf(controller.contarMesasLivres()));
+        lblFaturamento.setText("R$ " + String.format("%.2f", controller.calcularFaturamentoTotal()));
+        lblTempoMedio.setText(controller.obterTempoMedioFormatado());
 
-    private void sincronizarTabelaClientes() {
-        modelClientes.setRowCount(0);
-        for (int i = 0; i < controller.getListaClientes().size(); i++) {
-            Cliente c = controller.getListaClientes().get(i);
-            modelClientes.addRow(new Object[]{
-                "REG-" + (i + 101), 
-                c.getNome(), 
-                "E-mail: " + c.getEmail() + " | Bônus: R$ " + String.format("%.2f", c.getBonus())
-            });
-        }
-    }
+        // Mesas
+        atualizarExibicaoMesas();
 
-    private void sincronizarTabelaPedidos() {
-        modelPedidos.setRowCount(0);
-        for (Pedido p : controller.getListaPedidosAtivos()) {
-            StringBuilder descItens = new StringBuilder();
-            double totalConta = 0;
-
-            if (p.getItens() != null && !p.getItens().isEmpty()) {
-                for (ItemPedido ip : p.getItens()) {
-                    descItens.append(ip.getItem().getNome())
-                             .append(" [x").append(ip.getQuantidade()).append("]  ");
-                    totalConta += ip.getItem().getPreco() * ip.getQuantidade();
-                }
-            } else {
-                descItens.append("Nenhum item consumido ainda.");
-            }
-
-            modelPedidos.addRow(new Object[]{
-                "Mesa Número " + p.getMesa().getNumero(),
-                descItens.toString(),
-                "R$ " + String.format("%.2f", totalConta)
-            });
-        }
+        // Cardápio
+        atualizarCardapio();
     }
 
     // ======================== COMPONENTES VISUAIS ========================
 
-    private JPanel criarComponenteSidebar() {
-        JPanel sidebar = new JPanel();
-        sidebar.setBackground(new Color(30, 30, 30));
-        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setPreferredSize(new Dimension(210, 600));
-        sidebar.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
-
-        String[] botoesMenu = {"Dashboard", "Pedidos Ativos", "Cardápio", "Clientes"};
-        String[] chavesCards = {"DashboardPanel", "OrderPanel", "MenuPanel", "CustomersPanel"};
-
-        for (int i = 0; i < botoesMenu.length; i++) {
-            final String linkCard = chavesCards[i];
-            JButton btn = new JButton(botoesMenu[i]);
-            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btn.setMaximumSize(new Dimension(190, 42));
-            btn.setForeground(Color.BLACK);
-            btn.setBackground(new Color(45, 45, 45));
-            btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            btn.setFocusPainted(false);
-            btn.setBorderPainted(false);
-            btn.setOpaque(true);
-            btn.setContentAreaFilled(true);
-            
-            btn.addActionListener(e -> cardLayout.show(cardPanel, linkCard));
-            
-            sidebar.add(btn);
-            sidebar.add(Box.createVerticalStrut(10));
-        }
-        return sidebar;
-    }
-
-    private JPanel criarComponenteTopbar() {
+    private JPanel criarTopbar() {
         JPanel topbar = new JPanel(new BorderLayout());
         topbar.setBackground(new Color(20, 20, 20));
-        topbar.setPreferredSize(new Dimension(1024, 55));
-        
-        JLabel tituloGeral = new JLabel("  MEZA - Módulo Interno de Atendimento");
-        tituloGeral.setForeground(Color.WHITE);
-        tituloGeral.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        
-        topbar.add(tituloGeral, BorderLayout.WEST);
+        topbar.setPreferredSize(new Dimension(0, 60));
+
+        JLabel titulo = new JLabel("  MEZA - Gestão que Flui");
+        titulo.setForeground(Color.WHITE);
+        titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+
+        topbar.add(titulo, BorderLayout.WEST);
         return topbar;
     }
 
-    private void estilizarBotaoAcaoInferior(JButton botao) {
-        botao.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        botao.setForeground(Color.BLACK);
-        botao.setBackground(new Color(0, 122, 255));
-        botao.setFocusPainted(false);
-        botao.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
-        botao.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        botao.setOpaque(true);
-        botao.setContentAreaFilled(true);
-    }
+    private JPanel criarSidebar() {
+        JPanel sidebar = new JPanel();
+        sidebar.setBackground(new Color(240, 240, 240));
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setPreferredSize(new Dimension(180, 0));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(200, 200, 200)));
+        sidebar.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(200, 200, 200)),
+            BorderFactory.createEmptyBorder(20, 10, 20, 10)
+        ));
 
-    private JTable configEstiloTabela(JTable tabela) {
-        tabela.setRowHeight(28);
-        tabela.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tabela.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        tabela.getTableHeader().setBackground(new Color(240, 240, 240));
-        tabela.setFillsViewportHeight(true);
-        tabela.setSelectionBackground(new Color(220, 235, 255));
-        return tabela;
-    }
+        String[] botoes = {"Dashboard", "Cardápio", "Clientes"};
+        String[] cards = {"Dashboard", "Cardapio", "Clientes"};
 
-    // Painel com cantos arredondados
-    static class RoundedPanel extends JPanel {
-        private int raioCurvatura;
-        public RoundedPanel(int raio) {
-            this.raioCurvatura = raio;
-            setOpaque(false);
+        for (int i = 0; i < botoes.length; i++) {
+            final String card = cards[i];
+            JButton btn = new JButton(botoes[i]);
+            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+            btn.setMaximumSize(new Dimension(160, 40));
+            btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            btn.setFocusPainted(false);
+            btn.setBackground(new Color(230, 100, 50));
+            btn.setForeground(Color.WHITE);
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+            btn.addActionListener(e -> cardLayout.show(cardPanel, card));
+
+            sidebar.add(btn);
+            sidebar.add(Box.createVerticalStrut(10));
         }
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setColor(getBackground());
-            g2d.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, raioCurvatura, raioCurvatura);
-        }
+
+        return sidebar;
     }
 }

@@ -1,19 +1,25 @@
 package model;
 
+import java.util.ArrayList;
+
 public class Cliente {
     private String nome;
     private String cpf;
     private String email;
     private double bonus;
+    private ArrayList<Pedido> historicoPedidos;
 
     // Construtores
-    public Cliente() {}
+    public Cliente() {
+        this.historicoPedidos = new ArrayList<>();
+    }
 
     public Cliente(String nome, String cpf, String email, double bonus) {
         this.nome = nome;
         this.cpf = cpf;
         this.email = email;
         this.bonus = bonus;
+        this.historicoPedidos = new ArrayList<>();
     }
 
     // Getters e Setters
@@ -66,6 +72,24 @@ public class Cliente {
     public String obterResumo() {
         return String.format("%s (CPF: %s) - Bônus: R$ %.2f", 
                            nome, cpf, bonus);
+    }
+
+    public void adicionarPedidoAoHistorico(Pedido pedido) {
+        this.historicoPedidos.add(pedido);
+    }
+
+    public ArrayList<Pedido> getHistoricoPedidos() {
+        return historicoPedidos;
+    }
+
+    public double getTotalGasto() {
+        double total = 0;
+        for (Pedido p : historicoPedidos) {
+            if (p.getStatus().equals("PAGO")) {
+                total += p.calcularTotal();
+            }
+        }
+        return total;
     }
 
 }

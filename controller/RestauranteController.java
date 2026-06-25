@@ -91,6 +91,7 @@ public class RestauranteController {
         mesa.ocuparMesa(novoPedido);
         
         listaPedidosAtivos.add(novoPedido);
+        cliente.adicionarPedidoAoHistorico(novoPedido);
     }
 
     /**
@@ -319,19 +320,44 @@ public class RestauranteController {
         Pedido pedido = mesa.getPedidoAtual();
         Cliente cliente = mesa.getClienteAtual();
         
-        // Se não há cliente associado, permite pagar sem registrar bônus
+        double totalOriginal = pedido.calcularTotal();
+        double totalAPagar = totalOriginal;
+
+        // Se há cliente associado, registra pagamento com bônus
         if (cliente != null) {
             pedido.setCliente(cliente);
-            pedido.pagarConta(tipoPagamento, usarBonus);
+            
+            if (usarBonus) {
+                double bonus = cliente.getBonus();
+                if (bonus >= totalAPagar) {
+                    totalAPagar = 0;
+                    cliente.usarBonus(bonus);
+                } else {
+                    totalAPagar -= bonus;
+                    cliente.usarBonus(bonus);
+                }
+            }
+
+            // Adiciona bônus equivalente a 10% do total pago
+            cliente.adicionarBonus(totalAPagar);
+            
+            System.out.println("Mesa: " + mesa.getNumero());
+            System.out.println("Cliente: " + cliente.getNome());
+            System.out.println("Pagamento realizado com " + tipoPagamento);
+            System.out.println("Total original: R$ " + String.format("%.2f", totalOriginal));
+            System.out.println("Total pago: R$ " + String.format("%.2f", totalAPagar));
         } else {
             // Paga sem cliente (sem bônus)
             System.out.println("Mesa: " + mesa.getNumero());
             System.out.println("Pagamento realizado com " + tipoPagamento);
-            System.out.println("Total pago: R$ " + String.format("%.2f", pedido.calcularTotal()));
-            pedido.setStatus("PAGO");
+            System.out.println("Total pago: R$ " + String.format("%.2f", totalAPagar));
         }
         
-        // Fecha a mesa após pagamento
+        pedido.setStatus("PAGO");
+        pedido.setDataHoraFechada(java.time.LocalDateTime.now());
+        
+        // Remove dos ativos e fecha a mesa
+        listaPedidosAtivos.remove(pedido);
         fecharMesa(numeroMesa);
     }
 
@@ -398,5 +424,58 @@ public class RestauranteController {
         }
         
         return info.toString();
+    }
+
+    /**
+     * Calcula o faturamento total do dia (pedidos pagos)
+     */
+    public double calcularFaturamentoTotal() {
+        double total = 0;
+        for (Cliente cliente : listaClientes) {
+            total += cliente.getTotalGasto();
+        }
+        return total;
+    }
+
+    /**
+     * Calcula o tempo médio de permanência nas mesas
+     */
+    public double calcularTempoMedioPermanencia() {
+        if (listaClientes.isEmpty()) return 0;
+
+        long totalMinutos = 0;
+        int pedidosFinalizados = 0;
+
+        for (Cliente cliente : listaClientes) {
+            for (Pedido pedido : cliente.getHistoricoPedidos()) {
+                if (pedido.getStatus().equals("PAGO")) {
+                    totalMinutos += pedido.obterMinutosDePermanencia();
+                    pedidosFinalizados++;
+                }
+            }
+        }
+
+        if (pedidosFinalizados == 0) return 0;
+        return (double) totalMinutos / pedidosFinalizados;
+    }
+
+    /**
+     * Retorna tempo formatado para exibição no dashboard
+     */
+    public String obterTempoMedioFormatado() {
+        double minutos = calcularTempoMedioPermanencia();
+        long horas = (long) minutos / 60;
+        long mins = (long) minutos % 60;
+        if (horas > 0) {
+            return horas + "h " + mins + "m";
+        }
+        return mins + "m";
+    }
+
+    /**
+     * Obtém cliente por nome (busca exata) ou retorna null
+     */
+    public Cliente obterClientePorNomeExato(String nome) {
+        return buscarClientePorNome(nome);
     }
 }
