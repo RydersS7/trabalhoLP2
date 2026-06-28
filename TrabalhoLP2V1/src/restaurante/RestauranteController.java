@@ -4,478 +4,312 @@ import model.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * RestauranteController - Gerencia toda a lógica de negócio do restaurante
- * Separa a lógica da interface gráfica (MainFrame)
- * ATUALIZADO: Relacionamento Cliente ↔ Mesa implementado
- */
 public class RestauranteController {
 
-    // ---- DADOS DO SISTEMA ----
     private List<Mesa> listaMesas;
     private List<Cliente> listaClientes;
     private List<ItemCardapio> listaCardapio;
     private List<Pedido> listaPedidosAtivos;
 
-    /**
-     * Construtor - Inicializa o sistema
-     */
     public RestauranteController() {
         this.listaMesas = new ArrayList<>();
         this.listaClientes = new ArrayList<>();
         this.listaCardapio = new ArrayList<>();
         this.listaPedidosAtivos = new ArrayList<>();
-        
+
         inicializarMesas();
+        inicializarCardapio();
     }
 
-    /**
-     * Cria as 10 mesas iniciais do restaurante
-     */
     private void inicializarMesas() {
         for (int i = 1; i <= 10; i++) {
-            Mesa mesa = new Mesa();
-            mesa.setNumero(i);
-            mesa.setStatus(StatusMesa.LIVRE);
+            Mesa mesa = new Mesa(i, StatusMesa.LIVRE);
             listaMesas.add(mesa);
         }
     }
 
-    // ======================== GETTERS (Para MainFrame acessar dados) ========================
+    private void inicializarCardapio() {
+        // Comidas
+        adicionarComida("Filé à Parmegiana", 42.90, "Filé de frango empanado coberto com molho de tomate e queijo gratinado",
+            new String[]{"Filé de frango", "Farinha de rosca", "Ovos", "Molho de tomate", "Queijo muçarela"});
+        adicionarComida("Picanha na Chapa", 69.90, "Picanha grelhada acompanhada de arroz, feijão e vinagrete",
+            new String[]{"Picanha", "Alho", "Sal grosso", "Limão"});
+        adicionarComida("Frango Grelhado", 34.90, "Peito de frango grelhado com ervas finas e acompanhamentos",
+            new String[]{"Peito de frango", "Alecrim", "Tomilho", "Azeite", "Alho"});
+        adicionarComida("Moqueca de Peixe", 52.00, "Peixe cozido em leite de coco com dendê e legumes",
+            new String[]{"Peixe", "Leite de coco", "Dendê", "Coentro", "Tomate", "Cebola"});
+        adicionarComida("Macarrão ao Molho Bolonhesa", 29.90, "Macarrão espaguete com molho à base de carne moída",
+            new String[]{"Espaguete", "Carne moída", "Molho de tomate", "Cebola", "Alho"});
+        adicionarComida("Salada Caesar", 22.50, "Salada com alface romana, croutons, parmesão e molho caesar",
+            new String[]{"Alface romana", "Croutons", "Queijo parmesão", "Molho caesar", "Limão"});
+        adicionarComida("Hambúrguer Artesanal", 38.00, "Hambúrguer 180g com queijo, alface, tomate e molho especial",
+            new String[]{"Pão brioche", "Hambúrguer bovino 180g", "Queijo cheddar", "Alface", "Tomate", "Molho especial"});
+        adicionarComida("Risoto de Camarão", 58.00, "Risoto cremoso com camarões frescos e manjericão",
+            new String[]{"Arroz arbóreo", "Camarão", "Cebola", "Vinho branco", "Creme de leite", "Parmesão"});
 
-    public List<Mesa> getListaMesas() {
-        return listaMesas;
+        // Bebidas
+        adicionarBebida("Água Mineral", 4.50, "Crystal", "500ml");
+        adicionarBebida("Água com Gás", 5.50, "Perrier", "330ml");
+        adicionarBebida("Suco de Laranja", 9.90, "Natural da Casa", "400ml");
+        adicionarBebida("Suco de Açaí", 12.90, "Natural da Casa", "400ml");
+        adicionarBebida("Refrigerante Coca-Cola", 7.00, "Coca-Cola Brasil", "350ml");
+        adicionarBebida("Refrigerante Guaraná", 6.00, "Ambev", "350ml");
+        adicionarBebida("Cerveja Artesanal IPA", 16.00, "Cervejaria Bodebrown", "473ml");
+        adicionarBebida("Vinho Tinto Suave", 28.00, "Miolo", "Taça 150ml");
+        adicionarBebida("Caipirinha", 18.00, "Bar da Casa", "300ml");
+        adicionarBebida("Café Expresso", 6.50, "Illy", "50ml");
     }
 
-    public List<Cliente> getListaClientes() {
-        return listaClientes;
-    }
+    // ======================== GETTERS ========================
 
-    public List<ItemCardapio> getListaCardapio() {
-        return listaCardapio;
-    }
+    public List<Mesa> getListaMesas() { return listaMesas; }
+    public List<Cliente> getListaClientes() { return listaClientes; }
+    public List<ItemCardapio> getListaCardapio() { return listaCardapio; }
+    public List<Pedido> getListaPedidosAtivos() { return listaPedidosAtivos; }
 
-    public List<Pedido> getListaPedidosAtivos() {
-        return listaPedidosAtivos;
-    }
+    // ======================== MESAS ========================
 
-    // ======================== LÓGICA DE MESAS ========================
-
-    /**
-     * Abre uma mesa (muda status para OCUPADA e cria um novo pedido)
-     * ATUALIZADO: Agora recebe o cliente que vai sentar
-     */
     public void abrirMesa(int numeroMesa, Cliente cliente) throws IllegalStateException {
-        if (cliente == null) {
-            throw new IllegalStateException("Cliente não pode ser nulo");
-        }
-
+        if (cliente == null) throw new IllegalStateException("Cliente não pode ser nulo");
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa == null) {
-            throw new IllegalStateException("Mesa " + numeroMesa + " não encontrada");
-        }
-        
-        if (!mesa.getStatus().equals(StatusMesa.LIVRE)) {
+        if (mesa == null) throw new IllegalStateException("Mesa " + numeroMesa + " não encontrada");
+        if (!mesa.getStatus().equals(StatusMesa.LIVRE))
             throw new IllegalStateException("Mesa " + numeroMesa + " já está ocupada");
-        }
 
-        // Cria novo pedido para a mesa
         Pedido novoPedido = new Pedido();
         novoPedido.setMesa(mesa);
         novoPedido.setCliente(cliente);
         novoPedido.setStatus("ABERTO");
-        
-        // Atualiza a mesa COM o cliente
+
         mesa.setClienteAtual(cliente);
         mesa.ocuparMesa(novoPedido);
-        
         listaPedidosAtivos.add(novoPedido);
         cliente.adicionarPedidoAoHistorico(novoPedido);
     }
 
-    /**
-     * Abre uma mesa sem cliente especificado (cliente será adicionado depois)
-     * Útil se o cliente não quer se cadastrar
-     */
-    public void abrirMesaSemCliente(int numeroMesa) throws IllegalStateException {
-        Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa == null) {
-            throw new IllegalStateException("Mesa " + numeroMesa + " não encontrada");
-        }
-        
-        if (!mesa.getStatus().equals(StatusMesa.LIVRE)) {
-            throw new IllegalStateException("Mesa " + numeroMesa + " já está ocupada");
-        }
-
-        // Cria novo pedido para a mesa SEM cliente
-        Pedido novoPedido = new Pedido();
-        novoPedido.setMesa(mesa);
-        novoPedido.setStatus("ABERTO");
-        mesa.setClienteAtual(null);
-        mesa.ocuparMesa(novoPedido);
-        listaPedidosAtivos.add(novoPedido);
-    }
-
-    /**
-     * Fecha uma mesa (libera e remove o pedido)
-     */
     public void fecharMesa(int numeroMesa) {
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
         if (mesa != null && mesa.getPedidoAtual() != null) {
             listaPedidosAtivos.remove(mesa.getPedidoAtual());
-            mesa.liberarMesa();  // Limpa pedido E cliente
+            mesa.liberarMesa();
         }
     }
 
-    /**
-     * Busca uma mesa pelo número
-     */
-    private Mesa buscarMesaPorNumero(int numero) {
-        for (Mesa mesa : listaMesas) {
-            if (mesa.getNumero() == numero) {
-                return mesa;
-            }
-        }
+    public Mesa buscarMesaPorNumero(int numero) {
+        for (Mesa mesa : listaMesas)
+            if (mesa.getNumero() == numero) return mesa;
         return null;
     }
 
-    /**
-     * Obtém o cliente que está em uma mesa
-     */
     public Cliente obterClienteDaMesa(int numeroMesa) {
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa != null) {
-            return mesa.getClienteAtual();
-        }
-        
-        return null;
+        return mesa != null ? mesa.getClienteAtual() : null;
     }
 
-    /**
-     * Associa um cliente a uma mesa já aberta (útil se abriu sem cliente)
-     */
     public void associarClienteAMesa(int numeroMesa, Cliente cliente) throws IllegalStateException {
-        if (cliente == null) {
-            throw new IllegalStateException("Cliente não pode ser nulo");
-        }
-
+        if (cliente == null) throw new IllegalStateException("Cliente não pode ser nulo");
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa == null) {
-            throw new IllegalStateException("Mesa não encontrada");
-        }
-        
-        if (mesa.getPedidoAtual() == null) {
-            throw new IllegalStateException("Mesa não tem pedido aberto");
-        }
-
-        // Associa cliente à mesa E ao pedido
+        if (mesa == null) throw new IllegalStateException("Mesa não encontrada");
+        if (mesa.getPedidoAtual() == null) throw new IllegalStateException("Mesa não tem pedido aberto");
         mesa.setClienteAtual(cliente);
         mesa.getPedidoAtual().setCliente(cliente);
     }
 
-    // ======================== LÓGICA DE CARDÁPIO ========================
+    // ======================== CARDÁPIO ========================
 
-    /**
-     * Adiciona uma comida ao cardápio
-     */
-    public void adicionarComida(String nome, double preco, String descricao) {
+    public void adicionarComida(String nome, double preco, String descricao, String[] ingredientes) {
         Comida novaComida = new Comida();
         novaComida.setNome(nome);
         novaComida.setPreco(preco);
         novaComida.setDescricao(descricao);
-        novaComida.setIngredientes(new ArrayList<>());
-        
+        ArrayList<String> ings = new ArrayList<>();
+        if (ingredientes != null) for (String i : ingredientes) ings.add(i);
+        novaComida.setIngredientes(ings);
         listaCardapio.add(novaComida);
     }
 
-    /**
-     * Adiciona uma bebida ao cardápio
-     */
+    public void adicionarComida(String nome, double preco, String descricao) {
+        adicionarComida(nome, preco, descricao, null);
+    }
+
     public void adicionarBebida(String nome, double preco, String fornecedor, String volume) {
-        Bebida novaBebida = new Bebida();
-        novaBebida.setNome(nome);
-        novaBebida.setPreco(preco);
-        novaBebida.setFornecedor(fornecedor);
-        novaBebida.setVolume(volume);
-        
+        Bebida novaBebida = new Bebida(nome, preco, fornecedor, volume);
         listaCardapio.add(novaBebida);
     }
 
-    /**
-     * Remove um item do cardápio
-     */
-    public void removerItemCardapio(ItemCardapio item) {
-        listaCardapio.remove(item);
+    public void removerItemCardapio(ItemCardapio item) { listaCardapio.remove(item); }
+
+    public void alterarItemCardapio(ItemCardapio item, String novoNome, double novoPreco, String novaSpec) {
+        item.setNome(novoNome);
+        item.setPreco(novoPreco);
+        if (item instanceof Comida) ((Comida) item).setDescricao(novaSpec);
+        else if (item instanceof Bebida) ((Bebida) item).setVolume(novaSpec);
     }
 
-    // ======================== LÓGICA DE CLIENTES ========================
+    // ======================== CLIENTES ========================
 
-    /**
-     * Cadastra um novo cliente
-     */
     public void cadastrarCliente(String nome, String cpf, String email) {
+        // Remove formatação do CPF
+        String cpfLimpo = cpf.replaceAll("[^0-9]", "");
         Cliente novoCliente = new Cliente();
         novoCliente.setNome(nome);
-        novoCliente.setCpf(cpf);
+        novoCliente.setCpf(cpfLimpo);
         novoCliente.setEmail(email);
         novoCliente.setBonus(0.0);
-        
         listaClientes.add(novoCliente);
     }
 
-    /**
-     * Remove um cliente
-     */
-    public void removerCliente(Cliente cliente) {
-        listaClientes.remove(cliente);
+    public void alterarCliente(Cliente cliente, String novoNome, String novoEmail) {
+        cliente.setNome(novoNome);
+        cliente.setEmail(novoEmail);
     }
 
-    /**
-     * Busca um cliente pelo CPF
-     */
+    public void removerCliente(Cliente cliente) { listaClientes.remove(cliente); }
+
     public Cliente buscarClientePorCpf(String cpf) {
-        for (Cliente cliente : listaClientes) {
-            if (cliente.getCpf().equals(cpf)) {
-                return cliente;
-            }
-        }
+        String cpfLimpo = cpf.replaceAll("[^0-9]", "");
+        for (Cliente c : listaClientes)
+            if (c.getCpf().equals(cpfLimpo)) return c;
         return null;
     }
 
-    /**
-     * Busca um cliente pelo nome (busca parcial)
-     */
     public Cliente buscarClientePorNome(String nome) {
-        for (Cliente cliente : listaClientes) {
-            if (cliente.getNome().equalsIgnoreCase(nome)) {
-                return cliente;
-            }
-        }
+        for (Cliente c : listaClientes)
+            if (c.getNome().equalsIgnoreCase(nome)) return c;
         return null;
     }
 
-    // ======================== LÓGICA DE PEDIDOS ========================
+    // ======================== PEDIDOS ========================
 
-    /**
-     * Adiciona um item ao pedido de uma mesa
-     */
-    public void adicionarItemAoPedido(int numeroMesa, ItemCardapio item, int quantidade) 
-            throws IllegalStateException {
+    public void adicionarItemAoPedido(int numeroMesa, ItemCardapio item, int quantidade) {
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa == null) {
-            throw new IllegalStateException("Mesa não encontrada");
-        }
-        
+        if (mesa == null) throw new IllegalStateException("Mesa não encontrada");
         Pedido pedido = mesa.getPedidoAtual();
-        if (pedido == null) {
-            throw new IllegalStateException("Mesa não tem pedido aberto");
-        }
-
-        ItemPedido novoItemPedido = new ItemPedido(item, quantidade);
-        pedido.adicionarItem(novoItemPedido);
+        if (pedido == null) throw new IllegalStateException("Mesa não tem pedido aberto");
+        pedido.adicionarItem(new ItemPedido(item, quantidade));
     }
 
-    /**
-     * Remove um item do pedido de uma mesa
-     */
     public void removerItemDoPedido(int numeroMesa, ItemCardapio item) {
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa != null && mesa.getPedidoAtual() != null) {
-            Pedido pedido = mesa.getPedidoAtual();
-            pedido.getItens().removeIf(ip -> ip.getItem().equals(item));
-        }
+        if (mesa != null && mesa.getPedidoAtual() != null)
+            mesa.getPedidoAtual().getItens().removeIf(ip -> ip.getItem().equals(item));
     }
 
-    /**
-     * Calcula o total de um pedido
-     */
     public double calcularTotalPedido(int numeroMesa) {
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa == null || mesa.getPedidoAtual() == null) {
-            return 0.0;
-        }
-        
+        if (mesa == null || mesa.getPedidoAtual() == null) return 0.0;
         return mesa.getPedidoAtual().calcularTotal();
     }
 
-    /**
-     * Efetua o pagamento de um pedido
-     */
-    public void efetuarPagamento(int numeroMesa, String tipoPagamento, boolean usarBonus) 
-            throws IllegalStateException {
-        Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa == null || mesa.getPedidoAtual() == null) {
-            throw new IllegalStateException("Mesa não tem pedido aberto");
+    // Marcar item como entregue (para a cozinha)
+    public void marcarItemComoEntregue(Pedido pedido, ItemPedido itemPedido) {
+        itemPedido.setEntregue(true);
+        // Se todos os itens foram entregues, muda status do pedido
+        if (pedido.todosItensEntregues()) {
+            pedido.setStatus("ENTREGUE");
         }
+    }
+
+    // Entregar pedido completo (cozinha)
+    public void entregarPedido(int numeroMesa) {
+        Mesa mesa = buscarMesaPorNumero(numeroMesa);
+        if (mesa == null || mesa.getPedidoAtual() == null)
+            throw new IllegalStateException("Mesa sem pedido aberto");
+        Pedido pedido = mesa.getPedidoAtual();
+        for (ItemPedido ip : pedido.getItens()) ip.setEntregue(true);
+        pedido.setStatus("ENTREGUE");
+    }
+
+    public void efetuarPagamento(int numeroMesa, String tipoPagamento, boolean usarBonus) {
+        Mesa mesa = buscarMesaPorNumero(numeroMesa);
+        if (mesa == null || mesa.getPedidoAtual() == null)
+            throw new IllegalStateException("Mesa não tem pedido aberto");
 
         Pedido pedido = mesa.getPedidoAtual();
         Cliente cliente = mesa.getClienteAtual();
-        
+
         double totalOriginal = pedido.calcularTotal();
         double totalAPagar = totalOriginal;
 
-        // Se há cliente associado, registra pagamento com bônus
         if (cliente != null) {
             pedido.setCliente(cliente);
-            
-            if (usarBonus) {
+
+            if (usarBonus && cliente.getBonus() > 0) {
                 double bonus = cliente.getBonus();
                 if (bonus >= totalAPagar) {
+                    cliente.usarBonus(totalAPagar);
                     totalAPagar = 0;
-                    cliente.usarBonus(bonus);
                 } else {
                     totalAPagar -= bonus;
                     cliente.usarBonus(bonus);
                 }
             }
 
-            // Adiciona bônus equivalente a 10% do total pago
+            // Acumula 10% do valor pago em bônus
             cliente.adicionarBonus(totalAPagar);
-            
-            System.out.println("Mesa: " + mesa.getNumero());
-            System.out.println("Cliente: " + cliente.getNome());
-            System.out.println("Pagamento realizado com " + tipoPagamento);
-            System.out.println("Total original: R$ " + String.format("%.2f", totalOriginal));
-            System.out.println("Total pago: R$ " + String.format("%.2f", totalAPagar));
-        } else {
-            // Paga sem cliente (sem bônus)
-            System.out.println("Mesa: " + mesa.getNumero());
-            System.out.println("Pagamento realizado com " + tipoPagamento);
-            System.out.println("Total pago: R$ " + String.format("%.2f", totalAPagar));
         }
-        
+
         pedido.setStatus("PAGO");
         pedido.setDataHoraFechada(java.time.LocalDateTime.now());
-        
-        // Remove dos ativos e fecha a mesa
+
         listaPedidosAtivos.remove(pedido);
         fecharMesa(numeroMesa);
     }
 
-    /**
-     * Obtém o pedido ativo de uma mesa
-     */
     public Pedido buscarPedidoDaMesa(int numeroMesa) {
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa != null) {
-            return mesa.getPedidoAtual();
-        }
-        
-        return null;
+        return mesa != null ? mesa.getPedidoAtual() : null;
     }
 
-    // ======================== MÉTODOS AUXILIARES ========================
+    // ======================== ESTATÍSTICAS ========================
 
-    /**
-     * Retorna a quantidade de mesas ocupadas
-     */
     public int contarMesasOcupadas() {
         int count = 0;
-        for (Mesa mesa : listaMesas) {
-            if (!mesa.getStatus().equals(StatusMesa.LIVRE)) {
-                count++;
-            }
-        }
+        for (Mesa m : listaMesas)
+            if (!m.getStatus().equals(StatusMesa.LIVRE)) count++;
         return count;
     }
 
-    /**
-     * Retorna a quantidade de mesas livres
-     */
-    public int contarMesasLivres() {
-        return listaMesas.size() - contarMesasOcupadas();
-    }
+    public int contarMesasLivres() { return listaMesas.size() - contarMesasOcupadas(); }
 
-    /**
-     * Valida se um item pode ser adicionado ao cardápio
-     */
     public boolean validarItemCardapio(String nome, double preco) {
         return nome != null && !nome.trim().isEmpty() && preco > 0;
     }
 
-    /**
-     * Retorna informação sobre uma mesa (útil para debug)
-     */
     public String obterInfoMesa(int numeroMesa) {
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
-        
-        if (mesa == null) {
-            return "Mesa não encontrada";
-        }
-        
+        if (mesa == null) return "Mesa não encontrada";
         StringBuilder info = new StringBuilder();
-        info.append("Mesa ").append(mesa.getNumero()).append(" - ");
-        info.append("Status: ").append(mesa.getStatus()).append(" - ");
-        
-        if (mesa.getClienteAtual() != null) {
-            info.append("Cliente: ").append(mesa.getClienteAtual().getNome());
-        } else {
-            info.append("Cliente: Nenhum");
-        }
-        
+        info.append("Mesa ").append(mesa.getNumero()).append(" — ");
+        info.append("Status: ").append(mesa.getStatus()).append(" — ");
+        info.append("Cliente: ").append(mesa.getClienteAtual() != null ? mesa.getClienteAtual().getNome() : "Nenhum");
         return info.toString();
     }
 
-    /**
-     * Calcula o faturamento total do dia (pedidos pagos)
-     */
     public double calcularFaturamentoTotal() {
         double total = 0;
-        for (Cliente cliente : listaClientes) {
-            total += cliente.getTotalGasto();
-        }
+        for (Cliente c : listaClientes) total += c.getTotalGasto();
         return total;
     }
 
-    /**
-     * Calcula o tempo médio de permanência nas mesas
-     */
     public double calcularTempoMedioPermanencia() {
-        if (listaClientes.isEmpty()) return 0;
-
         long totalMinutos = 0;
-        int pedidosFinalizados = 0;
-
-        for (Cliente cliente : listaClientes) {
-            for (Pedido pedido : cliente.getHistoricoPedidos()) {
-                if (pedido.getStatus().equals("PAGO")) {
-                    totalMinutos += pedido.obterMinutosDePermanencia();
-                    pedidosFinalizados++;
+        int count = 0;
+        for (Cliente c : listaClientes) {
+            for (Pedido p : c.getHistoricoPedidos()) {
+                if (p.getStatus().equals("PAGO")) {
+                    totalMinutos += p.obterMinutosDePermanencia();
+                    count++;
                 }
             }
         }
-
-        if (pedidosFinalizados == 0) return 0;
-        return (double) totalMinutos / pedidosFinalizados;
+        return count == 0 ? 0 : (double) totalMinutos / count;
     }
 
-    /**
-     * Retorna tempo formatado para exibição no dashboard
-     */
     public String obterTempoMedioFormatado() {
         double minutos = calcularTempoMedioPermanencia();
         long horas = (long) minutos / 60;
         long mins = (long) minutos % 60;
-        if (horas > 0) {
-            return horas + "h " + mins + "m";
-        }
-        return mins + "m";
-    }
-
-    /**
-     * Obtém cliente por nome (busca exata) ou retorna null
-     */
-    public Cliente obterClientePorNomeExato(String nome) {
-        return buscarClientePorNome(nome);
+        return horas > 0 ? horas + "h " + mins + "m" : mins + "m";
     }
 }

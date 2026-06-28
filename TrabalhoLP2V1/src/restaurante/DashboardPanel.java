@@ -17,7 +17,6 @@ public class DashboardPanel extends JPanel {
     public DashboardPanel(RestauranteController controller, JFrame parentFrame) {
         this.controller = controller;
         this.parentFrame = parentFrame;
-        
         setLayout(new BorderLayout());
         setBackground(new Color(245, 245, 245));
         initComponents();
@@ -38,8 +37,7 @@ public class DashboardPanel extends JPanel {
         int livre = controller.contarMesasLivres();
         int ocupada = controller.contarMesasOcupadas();
 
-        JLabel statusLabel = new JLabel();
-        statusLabel.setText(String.format("  🟢 %d livres     🔴 %d ocupadas", livre, ocupada));
+        JLabel statusLabel = new JLabel(String.format("  🟢 %d livres     🔴 %d ocupadas", livre, ocupada));
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         statusLabel.setForeground(new Color(68, 68, 68));
         contentPanel.add(statusLabel);
@@ -48,7 +46,6 @@ public class DashboardPanel extends JPanel {
         gridPanel = new JPanel(new GridLayout(2, 5, 16, 16));
         gridPanel.setBackground(new Color(245, 245, 245));
         gridPanel.setMaximumSize(new Dimension(800, 300));
-
         refreshGridPanel();
 
         contentPanel.add(gridPanel);
@@ -63,10 +60,8 @@ public class DashboardPanel extends JPanel {
 
     private void refreshGridPanel() {
         gridPanel.removeAll();
-        for (Mesa mesa : controller.getListaMesas()) {
-            JButton tableBtn = createTableButton(mesa);
-            gridPanel.add(tableBtn);
-        }
+        for (Mesa mesa : controller.getListaMesas())
+            gridPanel.add(createTableButton(mesa));
         gridPanel.revalidate();
         gridPanel.repaint();
     }
@@ -74,38 +69,36 @@ public class DashboardPanel extends JPanel {
     private JButton createTableButton(Mesa mesa) {
         JButton btn = new JButton();
         boolean isLivre = mesa.getStatus() == StatusMesa.LIVRE;
-        
+
         btn.setLayout(new BoxLayout(btn, BoxLayout.Y_AXIS));
         btn.setBackground(isLivre ? new Color(235, 247, 235) : new Color(255, 235, 230));
         btn.setBorder(BorderFactory.createLineBorder(
-            isLivre ? new Color(160, 215, 160) : new Color(250, 168, 150), 2
-        ));
-        btn.setForeground(new Color(51, 51, 51));
-        btn.setFont(new Font("JetBrains Mono", Font.BOLD, 13));
+            isLivre ? new Color(160, 215, 160) : new Color(250, 168, 150), 2));
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setPreferredSize(new Dimension(110, 110));
-        
+
         JLabel numberLabel = new JLabel(String.format("MESA %d", mesa.getNumero()));
         numberLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        numberLabel.setFont(new Font("JetBrains Mono", Font.BOLD, 13));
+        numberLabel.setFont(new Font("Arial", Font.BOLD, 13));
         numberLabel.setForeground(new Color(51, 51, 51));
-        
+
         JLabel statusLabelComp = new JLabel(isLivre ? "LIVRE" : "OCUPADA");
         statusLabelComp.setAlignmentX(Component.CENTER_ALIGNMENT);
         statusLabelComp.setFont(new Font("Arial", Font.BOLD, 10));
         statusLabelComp.setForeground(isLivre ? new Color(76, 175, 80) : new Color(244, 67, 54));
-        
+
+        btn.add(Box.createVerticalStrut(12));
         btn.add(numberLabel);
         btn.add(Box.createVerticalStrut(8));
         btn.add(statusLabelComp);
-        
-        if (!isLivre) {
-            JLabel usageLabel = new JLabel("em uso");
-            usageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            usageLabel.setFont(new Font("Arial", Font.PLAIN, 9));
-            usageLabel.setForeground(new Color(244, 67, 54));
-            btn.add(usageLabel);
+
+        if (!isLivre && mesa.getClienteAtual() != null) {
+            JLabel clientLabel = new JLabel(truncate(mesa.getClienteAtual().getNome(), 12));
+            clientLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            clientLabel.setFont(new Font("Arial", Font.PLAIN, 9));
+            clientLabel.setForeground(new Color(150, 80, 40));
+            btn.add(clientLabel);
         }
 
         if (isLivre) {
@@ -117,128 +110,120 @@ public class DashboardPanel extends JPanel {
         return btn;
     }
 
+    private String truncate(String s, int max) {
+        return s.length() > max ? s.substring(0, max) + "…" : s;
+    }
+
     private void showOpenTableModal(int numeroMesa) {
-        JDialog modal = new JDialog((JFrame) parentFrame, "Abertura de Mesa " + numeroMesa, true);
-        modal.setSize(500, 380);
+        JDialog modal = new JDialog((JFrame) parentFrame, "Abrir Mesa " + numeroMesa, true);
+        modal.setSize(520, 420);
         modal.setLocationRelativeTo(parentFrame);
         modal.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        contentPanel.setBackground(new Color(255, 255, 255));
+        contentPanel.setBackground(Color.WHITE);
 
-        JLabel titleLabel = new JLabel(String.format("Abrir Mesa %d", numeroMesa));
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        titleLabel.setForeground(new Color(51, 51, 51));
-        contentPanel.add(titleLabel);
-        contentPanel.add(Box.createVerticalStrut(15));
+        JLabel title = new JLabel("Abrir Mesa " + numeroMesa);
+        title.setFont(new Font("Arial", Font.BOLD, 14));
+        title.setForeground(new Color(51, 51, 51));
+        contentPanel.add(title);
+        contentPanel.add(Box.createVerticalStrut(16));
 
-        JLabel clientSelectLabel = new JLabel("Selecionar Cliente (Obrigatório):");
-        clientSelectLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        clientSelectLabel.setForeground(new Color(51, 51, 51));
-        contentPanel.add(clientSelectLabel);
+        // --- Selecionar cliente existente ---
+        JLabel existLabel = new JLabel("Selecionar Cliente Cadastrado:");
+        existLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        existLabel.setForeground(new Color(51, 51, 51));
+        contentPanel.add(existLabel);
 
         JComboBox<String> clientCombo = new JComboBox<>();
-        clientCombo.addItem("— Escolha um cliente —");
-        
-        if (controller.getListaClientes().isEmpty()) {
-            clientCombo.addItem("(nenhum cliente cadastrado)");
-        } else {
-            for (Cliente cliente : controller.getListaClientes()) {
-                clientCombo.addItem(cliente.getNome() + " (" + cliente.getCpf() + ")");
-            }
-        }
-        
+        clientCombo.addItem("— Selecione um cliente —");
+        for (Cliente c : controller.getListaClientes())
+            clientCombo.addItem(c.getNome() + " — CPF: " + c.getCpf());
         clientCombo.setBackground(Color.WHITE);
-        clientCombo.setForeground(new Color(51, 51, 51));
         clientCombo.setFont(new Font("Arial", Font.PLAIN, 12));
+        clientCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         contentPanel.add(clientCombo);
-        contentPanel.add(Box.createVerticalStrut(15));
+        contentPanel.add(Box.createVerticalStrut(14));
 
-        JSeparator separator = new JSeparator();
-        contentPanel.add(separator);
-        contentPanel.add(Box.createVerticalStrut(15));
+        JSeparator sep = new JSeparator();
+        contentPanel.add(sep);
+        contentPanel.add(Box.createVerticalStrut(14));
 
-        JLabel newClientLabel = new JLabel("Ou Cadastrar Novo Cliente:");
-        newClientLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        newClientLabel.setForeground(new Color(51, 51, 51));
-        contentPanel.add(newClientLabel);
+        // --- Cadastrar novo cliente ---
+        JLabel newLabel = new JLabel("Ou Cadastrar Novo Cliente:");
+        newLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        newLabel.setForeground(new Color(51, 51, 51));
+        contentPanel.add(newLabel);
 
-        JLabel nameLabel = new JLabel("Nome:");
-        nameLabel.setFont(new Font("Arial", Font.PLAIN, 10));
-        nameLabel.setForeground(new Color(51, 51, 51));
-        contentPanel.add(nameLabel);
-        
+        JLabel nameL = new JLabel("Nome:"); nameL.setFont(new Font("Arial", Font.PLAIN, 10)); nameL.setForeground(new Color(51, 51, 51));
+        contentPanel.add(nameL);
         JTextField nameField = new JTextField();
-        nameField.setForeground(new Color(51, 51, 51));
         nameField.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        nameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+        nameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         contentPanel.add(nameField);
-        contentPanel.add(Box.createVerticalStrut(8));
+        contentPanel.add(Box.createVerticalStrut(6));
 
-        JLabel emailLabel = new JLabel("Email:");
-        emailLabel.setFont(new Font("Arial", Font.PLAIN, 10));
-        emailLabel.setForeground(new Color(51, 51, 51));
-        contentPanel.add(emailLabel);
-        
+        JLabel cpfL = new JLabel("CPF (somente números):"); cpfL.setFont(new Font("Arial", Font.PLAIN, 10)); cpfL.setForeground(new Color(51, 51, 51));
+        contentPanel.add(cpfL);
+        JTextField cpfField = new JTextField();
+        cpfField.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+        cpfField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        contentPanel.add(cpfField);
+        contentPanel.add(Box.createVerticalStrut(6));
+
+        JLabel emailL = new JLabel("Email:"); emailL.setFont(new Font("Arial", Font.PLAIN, 10)); emailL.setForeground(new Color(51, 51, 51));
+        contentPanel.add(emailL);
         JTextField emailField = new JTextField();
-        emailField.setForeground(new Color(51, 51, 51));
         emailField.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        emailField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+        emailField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         contentPanel.add(emailField);
-
-        contentPanel.add(Box.createVerticalStrut(20));
+        contentPanel.add(Box.createVerticalStrut(16));
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        btnPanel.setBackground(new Color(255, 255, 255));
+        btnPanel.setBackground(Color.WHITE);
         btnPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
         JButton cancelBtn = new JButton("Cancelar");
         cancelBtn.setBackground(new Color(230, 230, 230));
         cancelBtn.setForeground(new Color(51, 51, 51));
-        cancelBtn.setFont(new Font("Arial", Font.PLAIN, 12));
         cancelBtn.addActionListener(e -> modal.dispose());
-        
+
         JButton confirmBtn = new JButton("Confirmar Abertura");
         confirmBtn.setBackground(new Color(0, 122, 255));
         confirmBtn.setForeground(Color.WHITE);
         confirmBtn.setFont(new Font("Arial", Font.BOLD, 12));
         confirmBtn.addActionListener(e -> {
             try {
-                int selectedIndex = clientCombo.getSelectedIndex();
-                
-                if (selectedIndex > 0 && controller.getListaClientes().size() > 0) {
-                    Cliente cliente = controller.getListaClientes().get(selectedIndex - 1);
+                int idx = clientCombo.getSelectedIndex();
+                if (idx > 0) {
+                    Cliente cliente = controller.getListaClientes().get(idx - 1);
                     controller.abrirMesa(numeroMesa, cliente);
                     refreshGridPanel();
+                    if (parentFrame instanceof MainFrame) ((MainFrame) parentFrame).refreshSidebar();
                     modal.dispose();
-                    JOptionPane.showMessageDialog(parentFrame, 
-                        String.format("Mesa %d aberta para %s!", numeroMesa, cliente.getNome()), 
-                        "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-                }
-                else if (!nameField.getText().trim().isEmpty() && !emailField.getText().trim().isEmpty()) {
-                    String name = nameField.getText().trim();
-                    String email = emailField.getText().trim();
-                    String cpf = "00000000000";
-                    
-                    controller.cadastrarCliente(name, cpf, email);
-                    Cliente novoCliente = controller.buscarClientePorNome(name);
-                    controller.abrirMesa(numeroMesa, novoCliente);
-                    
-                    refreshGridPanel();
-                    modal.dispose();
-                    JOptionPane.showMessageDialog(parentFrame, 
-                        String.format("Mesa %d aberta para %s (novo cliente)!", numeroMesa, name), 
+                    JOptionPane.showMessageDialog(parentFrame,
+                        "Mesa " + numeroMesa + " aberta para " + cliente.getNome() + "!\nBônus disponível: R$ " + String.format("%.2f", cliente.getBonus()),
                         "Sucesso", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    JOptionPane.showMessageDialog(parentFrame, 
-                        "Selecione um cliente ou preencha os dados de um novo cliente!", 
-                        "Atenção", JOptionPane.WARNING_MESSAGE);
+                    String nome = nameField.getText().trim();
+                    String cpf = cpfField.getText().replaceAll("[^0-9]", "");
+                    String email = emailField.getText().trim();
+                    if (nome.isEmpty() || cpf.isEmpty() || email.isEmpty()) {
+                        JOptionPane.showMessageDialog(parentFrame, "Selecione um cliente ou preencha todos os campos do novo cliente!", "Atenção", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    controller.cadastrarCliente(nome, cpf, email);
+                    Cliente novo = controller.buscarClientePorNome(nome);
+                    controller.abrirMesa(numeroMesa, novo);
+                    refreshGridPanel();
+                    if (parentFrame instanceof MainFrame) ((MainFrame) parentFrame).refreshSidebar();
+                    modal.dispose();
+                    JOptionPane.showMessageDialog(parentFrame, "Mesa " + numeroMesa + " aberta para " + nome + " (novo cliente)!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
                 }
-            } catch (IllegalStateException ex) {
-                JOptionPane.showMessageDialog(parentFrame, ex.getMessage(), 
-                    "Erro", JOptionPane.ERROR_MESSAGE);
+            } catch (IllegalStateException | IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(parentFrame, ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -251,41 +236,86 @@ public class DashboardPanel extends JPanel {
     }
 
     private void showTableDetailsModal(int numeroMesa) {
-        JDialog modal = new JDialog((JFrame) parentFrame, "Detalhes da Mesa " + numeroMesa, true);
-        modal.setSize(400, 200);
+        JDialog modal = new JDialog((JFrame) parentFrame, "Mesa " + numeroMesa, true);
+        modal.setSize(480, 380);
         modal.setLocationRelativeTo(parentFrame);
 
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        contentPanel.setBackground(new Color(255, 255, 255));
+        contentPanel.setBackground(Color.WHITE);
 
-        model.Cliente cliente = controller.obterClienteDaMesa(numeroMesa);
-        String clienteInfo = cliente != null ? cliente.getNome() : "Sem cliente";
+        Cliente cliente = controller.obterClienteDaMesa(numeroMesa);
+        model.Pedido pedido = controller.buscarPedidoDaMesa(numeroMesa);
 
-        JLabel infoLabel = new JLabel(String.format("Mesa %d - Cliente: %s", numeroMesa, clienteInfo));
-        infoLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        infoLabel.setForeground(new Color(51, 51, 51));
-        contentPanel.add(infoLabel);
-        contentPanel.add(Box.createVerticalStrut(15));
+        JLabel titleLbl = new JLabel("Mesa " + numeroMesa + " — " + (cliente != null ? cliente.getNome() : "Sem cliente"));
+        titleLbl.setFont(new Font("Arial", Font.BOLD, 14));
+        titleLbl.setForeground(new Color(51, 51, 51));
+        contentPanel.add(titleLbl);
+
+        if (cliente != null) {
+            JLabel bonusLbl = new JLabel(String.format("Bônus disponível: R$ %.2f", cliente.getBonus()));
+            bonusLbl.setFont(new Font("Arial", Font.PLAIN, 11));
+            bonusLbl.setForeground(new Color(76, 175, 80));
+            contentPanel.add(bonusLbl);
+        }
+        contentPanel.add(Box.createVerticalStrut(10));
+
+        if (pedido != null && !pedido.getItens().isEmpty()) {
+            JLabel itensTitle = new JLabel("Itens do Pedido:");
+            itensTitle.setFont(new Font("Arial", Font.BOLD, 11));
+            itensTitle.setForeground(new Color(51, 51, 51));
+            contentPanel.add(itensTitle);
+
+            for (model.ItemPedido ip : pedido.getItens()) {
+                JLabel itemLbl = new JLabel("  • " + ip.toString());
+                itemLbl.setFont(new Font("Arial", Font.PLAIN, 11));
+                itemLbl.setForeground(new Color(60, 60, 60));
+                contentPanel.add(itemLbl);
+            }
+            contentPanel.add(Box.createVerticalStrut(8));
+
+            JLabel totalLbl = new JLabel(String.format("Total: R$ %.2f", pedido.calcularTotal()));
+            totalLbl.setFont(new Font("Arial", Font.BOLD, 12));
+            totalLbl.setForeground(new Color(51, 51, 51));
+            contentPanel.add(totalLbl);
+
+            JLabel statusLbl = new JLabel("Status: " + pedido.getStatus());
+            statusLbl.setFont(new Font("Arial", Font.PLAIN, 11));
+            statusLbl.setForeground(new Color(100, 100, 200));
+            contentPanel.add(statusLbl);
+
+            JLabel tempoLbl = new JLabel("Tempo na mesa: " + pedido.obterTempoFormatado());
+            tempoLbl.setFont(new Font("Arial", Font.PLAIN, 11));
+            tempoLbl.setForeground(new Color(120, 120, 120));
+            contentPanel.add(tempoLbl);
+        } else {
+            JLabel emptyLbl = new JLabel("Nenhum item no pedido ainda.");
+            emptyLbl.setFont(new Font("Arial", Font.ITALIC, 11));
+            emptyLbl.setForeground(new Color(150, 150, 150));
+            contentPanel.add(emptyLbl);
+        }
+
+        contentPanel.add(Box.createVerticalStrut(16));
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        btnPanel.setBackground(new Color(255, 255, 255));
+        btnPanel.setBackground(Color.WHITE);
 
-        JButton viewOrderBtn = new JButton("Ver Pedido");
-        viewOrderBtn.setBackground(new Color(0, 122, 255));
-        viewOrderBtn.setForeground(Color.WHITE);
-        viewOrderBtn.addActionListener(e -> modal.dispose());
+        JButton closeBtn = new JButton("Fechar");
+        closeBtn.setBackground(new Color(230, 230, 230));
+        closeBtn.setForeground(new Color(51, 51, 51));
+        closeBtn.addActionListener(e -> modal.dispose());
 
-        JButton payBtn = new JButton("Pagar e Fechar");
+        JButton payBtn = new JButton("Pagar e Fechar Mesa");
         payBtn.setBackground(new Color(76, 175, 80));
         payBtn.setForeground(Color.WHITE);
+        payBtn.setFont(new Font("Arial", Font.BOLD, 12));
         payBtn.addActionListener(e -> {
             modal.dispose();
             showPaymentModal(numeroMesa);
         });
 
-        btnPanel.add(viewOrderBtn);
+        btnPanel.add(closeBtn);
         btnPanel.add(payBtn);
         contentPanel.add(btnPanel);
 
@@ -294,60 +324,83 @@ public class DashboardPanel extends JPanel {
     }
 
     private void showPaymentModal(int numeroMesa) {
-        JDialog modal = new JDialog((JFrame) parentFrame, "Pagamento - Mesa " + numeroMesa, true);
-        modal.setSize(450, 450);
+        JDialog modal = new JDialog((JFrame) parentFrame, "Pagamento — Mesa " + numeroMesa, true);
+        modal.setSize(450, 380);
         modal.setLocationRelativeTo(parentFrame);
 
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        contentPanel.setBackground(new Color(255, 255, 255));
+        contentPanel.setBackground(Color.WHITE);
 
         double totalPedido = controller.calcularTotalPedido(numeroMesa);
-        
-        JLabel titleLabel = new JLabel(String.format("Pagamento - Mesa %d", numeroMesa));
+        Cliente cliente = controller.obterClienteDaMesa(numeroMesa);
+
+        JLabel titleLabel = new JLabel("Pagamento — Mesa " + numeroMesa);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
         titleLabel.setForeground(new Color(51, 51, 51));
         contentPanel.add(titleLabel);
-        contentPanel.add(Box.createVerticalStrut(15));
+        contentPanel.add(Box.createVerticalStrut(12));
 
-        JLabel totalLabel = new JLabel(String.format("Total: R$ %.2f", totalPedido));
-        totalLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        if (cliente != null) {
+            JLabel clienteLbl = new JLabel("Cliente: " + cliente.getNome());
+            clienteLbl.setFont(new Font("Arial", Font.PLAIN, 11));
+            clienteLbl.setForeground(new Color(80, 80, 80));
+            contentPanel.add(clienteLbl);
+        }
+
+        JLabel totalLabel = new JLabel(String.format("Total do Pedido: R$ %.2f", totalPedido));
+        totalLabel.setFont(new Font("Arial", Font.BOLD, 13));
         totalLabel.setForeground(new Color(51, 51, 51));
         contentPanel.add(totalLabel);
-        contentPanel.add(Box.createVerticalStrut(15));
+        contentPanel.add(Box.createVerticalStrut(14));
 
-        JLabel methodLabel = new JLabel("Método de Pagamento:");
+        JLabel methodLabel = new JLabel("Forma de Pagamento:");
         methodLabel.setFont(new Font("Arial", Font.BOLD, 11));
         methodLabel.setForeground(new Color(51, 51, 51));
         contentPanel.add(methodLabel);
 
         JComboBox<String> methodCombo = new JComboBox<>(
-            new String[]{"Dinheiro", "Cartão Crédito", "Cartão Débito", "PIX", "Cheque"}
-        );
+            new String[]{"Cartão de Crédito", "Cartão de Débito", "Dinheiro", "PIX"});
         methodCombo.setBackground(Color.WHITE);
-        methodCombo.setForeground(new Color(51, 51, 51));
         methodCombo.setFont(new Font("Arial", Font.PLAIN, 12));
         methodCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         contentPanel.add(methodCombo);
-        contentPanel.add(Box.createVerticalStrut(15));
+        contentPanel.add(Box.createVerticalStrut(14));
 
-        model.Cliente cliente = controller.obterClienteDaMesa(numeroMesa);
         JCheckBox useBonus = new JCheckBox();
-        
         if (cliente != null && cliente.getBonus() > 0) {
-            useBonus.setText(String.format("Usar bônus (R$ %.2f disponível)", cliente.getBonus()));
+            useBonus.setText(String.format("Usar bônus acumulado (R$ %.2f disponível)", cliente.getBonus()));
             useBonus.setFont(new Font("Arial", Font.PLAIN, 11));
+            useBonus.setBackground(Color.WHITE);
             useBonus.setForeground(new Color(51, 51, 51));
-            useBonus.setBackground(new Color(255, 255, 255));
             contentPanel.add(useBonus);
-            contentPanel.add(Box.createVerticalStrut(15));
+
+            // Preview do desconto
+            JLabel previewLbl = new JLabel();
+            previewLbl.setFont(new Font("Arial", Font.ITALIC, 10));
+            previewLbl.setForeground(new Color(76, 175, 80));
+            double desc = Math.min(cliente.getBonus(), totalPedido);
+            previewLbl.setText(String.format("  → Desconto de R$ %.2f | Total final: R$ %.2f", desc, totalPedido - desc));
+            useBonus.addActionListener(e -> {
+                if (useBonus.isSelected()) previewLbl.setText(String.format("  → Desconto de R$ %.2f | Total final: R$ %.2f", desc, totalPedido - desc));
+                else previewLbl.setText("");
+            });
+            contentPanel.add(previewLbl);
+            contentPanel.add(Box.createVerticalStrut(8));
+        }
+
+        if (cliente != null) {
+            JLabel bonusInfo = new JLabel("Você acumulará 10% do valor pago em bônus!");
+            bonusInfo.setFont(new Font("Arial", Font.ITALIC, 10));
+            bonusInfo.setForeground(new Color(100, 100, 200));
+            contentPanel.add(bonusInfo);
         }
 
         contentPanel.add(Box.createVerticalGlue());
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        btnPanel.setBackground(new Color(255, 255, 255));
+        btnPanel.setBackground(Color.WHITE);
         btnPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
         JButton cancelBtn = new JButton("Cancelar");
@@ -362,18 +415,22 @@ public class DashboardPanel extends JPanel {
         confirmBtn.addActionListener(e -> {
             try {
                 String method = (String) methodCombo.getSelectedItem();
-                boolean usarBonus = useBonus.isSelected();
-                
-                controller.efetuarPagamento(numeroMesa, method, usarBonus);
+                boolean usarBonusVal = useBonus.isSelected();
+                double bonusAntesCliente = cliente != null ? cliente.getBonus() : 0;
+
+                controller.efetuarPagamento(numeroMesa, method, usarBonusVal);
                 refreshGridPanel();
+                if (parentFrame instanceof MainFrame) ((MainFrame) parentFrame).refreshSidebar();
                 modal.dispose();
-                
-                JOptionPane.showMessageDialog(parentFrame, 
-                    "Pagamento realizado com sucesso!\nMesa liberada.", 
-                    "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+
+                String msg = "Pagamento realizado com sucesso!\nMesa liberada.";
+                if (cliente != null) {
+                    double novoBonus = cliente.getBonus();
+                    msg += String.format("\n\nBônus acumulado: R$ %.2f", novoBonus);
+                }
+                JOptionPane.showMessageDialog(parentFrame, msg, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(parentFrame, "Erro: " + ex.getMessage(), 
-                    "Erro", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(parentFrame, "Erro: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -395,15 +452,11 @@ public class DashboardPanel extends JPanel {
         }, 0, 2000);
     }
 
-    public void refresh() {
-        refreshGridPanel();
-    }
+    public void refresh() { refreshGridPanel(); }
 
     @Override
     public void removeNotify() {
         super.removeNotify();
-        if (refreshTimer != null) {
-            refreshTimer.cancel();
-        }
+        if (refreshTimer != null) refreshTimer.cancel();
     }
 }

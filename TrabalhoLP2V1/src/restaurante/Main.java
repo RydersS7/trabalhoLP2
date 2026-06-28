@@ -11,13 +11,10 @@ public class Main {
             // Mantém padrão
         }
 
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                RestauranteController controller = new RestauranteController();
-                MainFrame frame = new MainFrame(controller);
-                frame.setVisible(true);
-            }
+        SwingUtilities.invokeLater(() -> {
+            RestauranteController controller = new RestauranteController();
+            LoginScreen loginScreen = new LoginScreen(controller);
+            loginScreen.setVisible(true);
         });
     }
 }

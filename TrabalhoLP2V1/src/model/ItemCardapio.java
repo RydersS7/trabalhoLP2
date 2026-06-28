@@ -4,7 +4,6 @@ public abstract class ItemCardapio {
     private String nome;
     private double preco;
 
-    // Construtores
     public ItemCardapio() {}
 
     public ItemCardapio(String nome, double preco) {
@@ -12,23 +11,23 @@ public abstract class ItemCardapio {
         this.preco = preco;
     }
 
-    // Getters e Setters
-    public String getNome() {
-        return nome;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public double getPreco() {
-        return preco;
-    }
-
+    public double getPreco() { return preco; }
     public void setPreco(double preco) {
-    if (preco <= 0) {
-        throw new IllegalArgumentException("Preço deve ser maior que zero");
+        if (preco <= 0) throw new IllegalArgumentException("Preço deve ser maior que zero");
+        this.preco = preco;
     }
-    this.preco = preco;
-}
+
+    // Método abstrato — cada subclasse implementa sua descrição detalhada
+    public abstract String getDescricaoCompleta();
+
+    // Método abstrato — retorna a categoria do item
+    public abstract String getCategoria();
+
+    @Override
+    public String toString() {
+        return String.format("[%s] %s — R$ %.2f", getCategoria(), nome, preco);
+    }
 }

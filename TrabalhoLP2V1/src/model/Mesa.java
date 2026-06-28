@@ -6,7 +6,6 @@ public class Mesa {
     private Pedido pedidoAtual;
     private Cliente clienteAtual;
 
-    // Construtores
     public Mesa() {}
 
     public Mesa(int numero, StatusMesa status) {
@@ -14,38 +13,19 @@ public class Mesa {
         this.status = status;
     }
 
-    // Getters e Setters
-    public int getNumero() {
-        return numero;
-    }
+    public int getNumero() { return numero; }
+    public void setNumero(int numero) { this.numero = numero; }
 
-    public void setNumero(int numero) {
-        this.numero = numero;
-    }
+    public StatusMesa getStatus() { return status; }
+    public void setStatus(StatusMesa status) { this.status = status; }
 
-    public StatusMesa getStatus() {
-        return status;
-    }
+    public Pedido getPedidoAtual() { return pedidoAtual; }
+    public void setPedidoAtual(Pedido pedidoAtual) { this.pedidoAtual = pedidoAtual; }
 
-    public void setStatus(StatusMesa status) {
-        this.status = status;
-    }
+    public Cliente getClienteAtual() { return clienteAtual; }
+    public void setClienteAtual(Cliente cliente) { this.clienteAtual = cliente; }
 
-    public Pedido getPedidoAtual() {
-        return pedidoAtual;
-    }
-
-    public void setPedidoAtual(Pedido pedidoAtual) {
-        this.pedidoAtual = pedidoAtual;
-    }
-    public Cliente getClienteAtual() {
-        return clienteAtual;
-    }
-    
-    public void setClienteAtual(Cliente cliente) {
-        this.clienteAtual = cliente;
-    }
-     public void ocuparMesa(Pedido pedido) {
+    public void ocuparMesa(Pedido pedido) {
         this.pedidoAtual = pedido;
         this.status = StatusMesa.OCUPADA;
     }
@@ -54,5 +34,10 @@ public class Mesa {
         this.pedidoAtual = null;
         this.status = StatusMesa.LIVRE;
         this.clienteAtual = null;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Mesa %d [%s]", numero, status);
     }
 }
