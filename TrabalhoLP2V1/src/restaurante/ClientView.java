@@ -27,6 +27,8 @@ public class ClientView extends JFrame {
     private DefaultTableModel carrinhoModel;
     private JLabel carrinhoTotalLbl;
     private DefaultTableModel histModel;
+    private DefaultTableModel itensPedidoModel; // itens já enviados à cozinha
+    private JLabel itensPedidoTotalLbl;
 
     // Mesa selection screen
     private JPanel mesaSelectionPanel;
@@ -38,7 +40,7 @@ public class ClientView extends JFrame {
     public ClientView(RestauranteController controller, Cliente cliente) {
         this.controller = controller;
         this.cliente = cliente;
-        setTitle("MEZA — Área do Cliente");
+        setTitle("Fogo na Chapa — Área do Cliente");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(980, 640);
         setLocationRelativeTo(null);
@@ -58,8 +60,16 @@ public class ClientView extends JFrame {
         root.add(mesaSelectionPanel, "mesa");
         root.add(mainPanel, "main");
 
-        rootCardLayout.show(root, "mesa");
-        startMesaRefreshTimer();
+        // Se o cliente já tem uma mesa ativa (voltou após logout), reconecta diretamente
+        Mesa mesaAtiva = controller.buscarMesaAtivaDoCliente(cliente);
+        if (mesaAtiva != null) {
+            mesaSelecionada = mesaAtiva;
+            rootCardLayout.show(root, "main");
+            // Não inicia o timer de mesa pois já está no painel principal
+        } else {
+            rootCardLayout.show(root, "mesa");
+            startMesaRefreshTimer();
+        }
     }
 
     private JPanel buildMesaSelectionPanel() {
@@ -74,13 +84,13 @@ public class ClientView extends JFrame {
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 13));
         left.setOpaque(false);
-        JLabel logo = new JLabel("⊞");
+        JLabel logo = new JLabel("🍖");
         logo.setForeground(Color.WHITE);
         logo.setFont(new Font("Arial", Font.BOLD, 14));
         logo.setOpaque(true);
         logo.setBackground(new Color(0, 122, 255));
         logo.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
-        JLabel title = new JLabel("MEZA");
+        JLabel title = new JLabel("Fogo na Chapa");
         title.setForeground(Color.WHITE);
         title.setFont(new Font("Arial", Font.BOLD, 14));
         JLabel sub = new JLabel("Escolha sua Mesa");
@@ -255,14 +265,14 @@ public class ClientView extends JFrame {
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 13));
         left.setOpaque(false);
 
-        JLabel logo = new JLabel("⊞");
+        JLabel logo = new JLabel("🍖");
         logo.setForeground(Color.WHITE);
         logo.setFont(new Font("Arial", Font.BOLD, 14));
         logo.setOpaque(true);
         logo.setBackground(new Color(0, 122, 255));
         logo.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
 
-        JLabel title = new JLabel("MEZA");
+        JLabel title = new JLabel("Fogo na Chapa");
         title.setForeground(Color.WHITE);
         title.setFont(new Font("Arial", Font.BOLD, 14));
 
@@ -286,10 +296,7 @@ public class ClientView extends JFrame {
 
         JButton sairBtn = miniBtn("Sair");
         sairBtn.addActionListener(e -> {
-            // Fechar mesa se aberta e carrinho vazio
-            if (mesaSelecionada != null && carrinho.isEmpty()) {
-                controller.fecharMesa(mesaSelecionada.getNumero());
-            }
+            // Não fecha a mesa ao sair — pedido permanece aberto para o gerente
             dispose();
             SwingUtilities.invokeLater(() -> new LoginScreen(controller).setVisible(true));
         });
@@ -497,10 +504,67 @@ public class ClientView extends JFrame {
         panel.setBackground(new Color(245, 246, 250));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 28, 20, 28));
 
+        // Header
         JLabel pageTitle = new JLabel("Meu Pedido");
         pageTitle.setFont(new Font("Arial", Font.BOLD, 18));
         pageTitle.setForeground(new Color(22, 24, 35));
         panel.add(pageTitle, BorderLayout.NORTH);
+
+        // Center: split pane com itens já enviados + carrinho novo
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setBackground(new Color(245, 246, 250));
+
+        // ── Seção: Itens já enviados à cozinha ──────────────────────────────
+        JLabel enviadosTitle = new JLabel("Itens já enviados à cozinha:");
+        enviadosTitle.setFont(new Font("Arial", Font.BOLD, 13));
+        enviadosTitle.setForeground(new Color(60, 100, 60));
+        enviadosTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        enviadosTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+        centerPanel.add(enviadosTitle);
+
+        String[] envCols = {"Item", "Qtd", "Subtotal", "Status"};
+        itensPedidoModel = new DefaultTableModel(envCols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        JTable enviadosTable = new JTable(itensPedidoModel);
+        enviadosTable.setFont(new Font("Arial", Font.PLAIN, 12));
+        enviadosTable.setForeground(new Color(40, 44, 60));
+        enviadosTable.setRowHeight(26);
+        enviadosTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 11));
+        enviadosTable.getTableHeader().setBackground(new Color(220, 240, 220));
+        enviadosTable.getTableHeader().setForeground(new Color(40, 80, 40));
+        enviadosTable.setGridColor(new Color(200, 230, 200));
+        enviadosTable.setBackground(new Color(248, 255, 248));
+        JScrollPane envScroll = new JScrollPane(enviadosTable);
+        envScroll.setBorder(BorderFactory.createLineBorder(new Color(180, 220, 180), 1));
+        envScroll.getViewport().setBackground(new Color(248, 255, 248));
+        envScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
+        envScroll.setPreferredSize(new Dimension(0, 130));
+        envScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+        centerPanel.add(envScroll);
+
+        itensPedidoTotalLbl = new JLabel("Total enviado: R$ 0,00");
+        itensPedidoTotalLbl.setFont(new Font("Arial", Font.ITALIC, 11));
+        itensPedidoTotalLbl.setForeground(new Color(60, 130, 60));
+        itensPedidoTotalLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        itensPedidoTotalLbl.setBorder(BorderFactory.createEmptyBorder(4, 0, 10, 0));
+        centerPanel.add(itensPedidoTotalLbl);
+        refreshItensPedido();
+
+        JSeparator sep = new JSeparator();
+        sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        sep.setForeground(new Color(200, 210, 230));
+        centerPanel.add(sep);
+        centerPanel.add(Box.createVerticalStrut(10));
+
+        // ── Seção: Carrinho (novos itens) ───────────────────────────────────
+        JLabel carrinhoTitle = new JLabel("Adicionar mais itens:");
+        carrinhoTitle.setFont(new Font("Arial", Font.BOLD, 13));
+        carrinhoTitle.setForeground(new Color(22, 24, 35));
+        carrinhoTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        carrinhoTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+        centerPanel.add(carrinhoTitle);
 
         String[] cols = {"Item", "Categoria", "Qtd", "Preço Unit.", "Subtotal"};
         carrinhoModel = new DefaultTableModel(cols, 0) {
@@ -543,14 +607,17 @@ public class ClientView extends JFrame {
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(BorderFactory.createLineBorder(new Color(218, 222, 238), 1));
         scroll.getViewport().setBackground(Color.WHITE);
-        panel.add(scroll, BorderLayout.CENTER);
+        scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+        centerPanel.add(scroll);
+
+        panel.add(centerPanel, BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel();
         bottomPanel.setOpaque(false);
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(14, 0, 0, 0));
 
-        carrinhoTotalLbl = new JLabel("Total: R$ 0,00");
+        carrinhoTotalLbl = new JLabel("Total novos itens: R$ 0,00");
         carrinhoTotalLbl.setFont(new Font("Arial", Font.BOLD, 16));
         carrinhoTotalLbl.setForeground(new Color(22, 24, 35));
         carrinhoTotalLbl.setAlignmentX(Component.RIGHT_ALIGNMENT);
@@ -563,7 +630,7 @@ public class ClientView extends JFrame {
         JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         btnRow.setOpaque(false);
 
-        JButton clearBtn = new JButton("Limpar pedido");
+        JButton clearBtn = new JButton("Limpar carrinho");
         clearBtn.setBackground(new Color(230, 232, 242));
         clearBtn.setForeground(new Color(80, 85, 115));
         clearBtn.setFont(new Font("Arial", Font.PLAIN, 12));
@@ -609,16 +676,25 @@ public class ClientView extends JFrame {
 
     // ── PAGAMENTO ─────────────────────────────────────────────────────────────
     private void showPaymentDialog() {
-        if (carrinho.isEmpty()) {
+        // Verifica se há itens no carrinho OU no pedido já existente
+        boolean temItensNoPedido = false;
+        if (mesaSelecionada != null) {
+            Pedido p = controller.buscarPedidoDaMesa(mesaSelecionada.getNumero());
+            temItensNoPedido = p != null && !p.getItens().isEmpty();
+        }
+        if (carrinho.isEmpty() && !temItensNoPedido) {
             JOptionPane.showMessageDialog(this, "Adicione itens ao pedido antes de pagar.",
                     "Pedido vazio", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        double total = calcularTotalCarrinho();
+        // Total = itens do pedido existente + novos itens do carrinho
+        double totalPedidoExistente = mesaSelecionada != null ? controller.calcularTotalPedido(mesaSelecionada.getNumero()) : 0;
+        double totalCarrinho = calcularTotalCarrinho();
+        double total = totalPedidoExistente + totalCarrinho;
 
         JDialog dialog = new JDialog(this, "Finalizar Pedido", true);
-        dialog.setSize(420, 360);
+        dialog.setSize(440, 400);
         dialog.setLocationRelativeTo(this);
 
         JPanel cp = new JPanel();
@@ -633,11 +709,25 @@ public class ClientView extends JFrame {
         cp.add(ttl);
         cp.add(Box.createVerticalStrut(12));
 
+        // Itens já no pedido
+        if (temItensNoPedido) {
+            Pedido p = controller.buscarPedidoDaMesa(mesaSelecionada.getNumero());
+            for (ItemPedido ip : p.getItens()) {
+                JLabel il = new JLabel(String.format("  %d× %s — R$ %.2f%s",
+                        ip.getQuantidade(), ip.getItem().getNome(), ip.calcularSubtotal(),
+                        ip.isEntregue() ? " ✅" : " ⏳"));
+                il.setFont(new Font("Arial", Font.PLAIN, 12));
+                il.setForeground(new Color(60, 65, 90));
+                il.setAlignmentX(Component.LEFT_ALIGNMENT);
+                cp.add(il);
+            }
+        }
+        // Novos itens do carrinho
         for (Map.Entry<ItemCardapio, Integer> e : carrinho.entrySet()) {
-            JLabel il = new JLabel(String.format("  %d× %s — R$ %.2f",
+            JLabel il = new JLabel(String.format("  %d× %s — R$ %.2f  [novo]",
                     e.getValue(), e.getKey().getNome(), e.getKey().getPreco() * e.getValue()));
             il.setFont(new Font("Arial", Font.PLAIN, 12));
-            il.setForeground(new Color(60, 65, 90));
+            il.setForeground(new Color(0, 100, 180));
             il.setAlignmentX(Component.LEFT_ALIGNMENT);
             cp.add(il);
         }
@@ -721,7 +811,7 @@ public class ClientView extends JFrame {
             }
             try {
                 int numMesa = mesaSelecionada.getNumero();
-                // Adicionar itens ao pedido já aberto na mesa
+                // Adicionar novos itens do carrinho ao pedido já aberto na mesa
                 for (Map.Entry<ItemCardapio, Integer> entry : carrinho.entrySet()) {
                     controller.adicionarItemAoPedido(numMesa, entry.getKey(), entry.getValue());
                 }
@@ -732,6 +822,7 @@ public class ClientView extends JFrame {
                 carrinho.clear();
                 mesaSelecionada = null;
                 refreshCarrinho();
+                refreshItensPedido();
                 refreshStats();
                 reloadHistTable();
 
@@ -770,7 +861,30 @@ public class ClientView extends JFrame {
         }
         int totalItens = carrinho.values().stream().mapToInt(i -> i).sum();
         if (carrinhoCountLbl != null) carrinhoCountLbl.setText("🛒 " + totalItens + " item(s)");
-        if (carrinhoTotalLbl != null) carrinhoTotalLbl.setText(String.format("Total: R$ %.2f", total));
+        if (carrinhoTotalLbl != null) carrinhoTotalLbl.setText(String.format("Total novos itens: R$ %.2f", total));
+    }
+
+    private void refreshItensPedido() {
+        if (itensPedidoModel == null) return;
+        itensPedidoModel.setRowCount(0);
+        double total = 0;
+        if (mesaSelecionada != null) {
+            Pedido pedido = controller.buscarPedidoDaMesa(mesaSelecionada.getNumero());
+            if (pedido != null) {
+                for (ItemPedido ip : pedido.getItens()) {
+                    double sub = ip.calcularSubtotal();
+                    total += sub;
+                    itensPedidoModel.addRow(new Object[]{
+                        ip.getItem().getNome(),
+                        ip.getQuantidade(),
+                        String.format("R$ %.2f", sub),
+                        ip.isEntregue() ? "✅ Entregue" : "⏳ Aguardando"
+                    });
+                }
+            }
+        }
+        if (itensPedidoTotalLbl != null)
+            itensPedidoTotalLbl.setText(total > 0 ? String.format("Total enviado: R$ %.2f", total) : "Nenhum item enviado ainda.");
     }
 
     private double calcularTotalCarrinho() {

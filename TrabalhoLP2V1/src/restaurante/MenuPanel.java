@@ -40,10 +40,7 @@ public class MenuPanel extends JPanel {
         textPanel.add(titleLabel);
         textPanel.add(countLabel);
 
-        JButton addBtn = new JButton("+ Adicionar ao Cardápio");
-        addBtn.setBackground(new Color(0, 122, 255));
-        addBtn.setForeground(Color.WHITE);
-        addBtn.setFont(new Font("Arial", Font.BOLD, 12));
+        JButton addBtn = styledBtn("+ Adicionar ao Cardápio", new Color(0, 122, 255));
         addBtn.addActionListener(e -> showAddMenuItemModal());
 
         headerPanel.add(textPanel, BorderLayout.WEST);
@@ -172,13 +169,10 @@ public class MenuPanel extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         btnPanel.setBackground(Color.WHITE);
 
-        JButton cancelBtn = new JButton("Cancelar");
-        cancelBtn.setBackground(new Color(230,230,230)); cancelBtn.setForeground(new Color(51,51,51));
+        JButton cancelBtn = styledBtn("Cancelar", new Color(140, 145, 165));
         cancelBtn.addActionListener(e -> modal.dispose());
 
-        JButton confirmBtn = new JButton("Adicionar");
-        confirmBtn.setBackground(new Color(0,122,255)); confirmBtn.setForeground(Color.WHITE);
-        confirmBtn.setFont(new Font("Arial", Font.BOLD, 12));
+        JButton confirmBtn = styledBtn("Adicionar", new Color(0, 122, 255));
         confirmBtn.addActionListener(e -> {
             try {
                 String nome = nameField.getText().trim();
@@ -239,15 +233,13 @@ public class MenuPanel extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         btnPanel.setBackground(Color.WHITE);
 
-        JButton editBtn = new JButton("✏ Editar");
-        editBtn.setBackground(new Color(0,122,255)); editBtn.setForeground(Color.WHITE);
+        JButton editBtn = styledBtn("✏ Editar", new Color(0, 122, 255));
         editBtn.addActionListener(e -> {
             modal.dispose();
             showEditItemModal(item);
         });
 
-        JButton deleteBtn = new JButton("🗑 Excluir");
-        deleteBtn.setBackground(new Color(220,53,69)); deleteBtn.setForeground(Color.WHITE);
+        JButton deleteBtn = styledBtn("🗑 Excluir", new Color(220, 53, 69));
         deleteBtn.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(parentFrame,
                 "Excluir \"" + item.getNome() + "\" do cardápio?",
@@ -260,8 +252,7 @@ public class MenuPanel extends JPanel {
             }
         });
 
-        JButton closeBtn = new JButton("Fechar");
-        closeBtn.setBackground(new Color(200,200,200)); closeBtn.setForeground(new Color(51,51,51));
+        JButton closeBtn = styledBtn("Fechar", new Color(140, 145, 165));
         closeBtn.addActionListener(e -> modal.dispose());
 
         btnPanel.add(editBtn);
@@ -315,13 +306,10 @@ public class MenuPanel extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         btnPanel.setBackground(Color.WHITE);
 
-        JButton cancelBtn = new JButton("Cancelar");
-        cancelBtn.setBackground(new Color(230,230,230)); cancelBtn.setForeground(new Color(51,51,51));
+        JButton cancelBtn = styledBtn("Cancelar", new Color(140, 145, 165));
         cancelBtn.addActionListener(e -> modal.dispose());
 
-        JButton saveBtn = new JButton("Salvar");
-        saveBtn.setBackground(new Color(0,122,255)); saveBtn.setForeground(Color.WHITE);
-        saveBtn.setFont(new Font("Arial", Font.BOLD, 12));
+        JButton saveBtn = styledBtn("Salvar", new Color(0, 122, 255));
         saveBtn.addActionListener(e -> {
             try {
                 String novoNome = nameField.getText().trim();
@@ -345,4 +333,27 @@ public class MenuPanel extends JPanel {
     }
 
     public void refresh() { refreshMenuTable(); }
+
+    private JButton styledBtn(String text, Color bg) {
+        JButton btn = new JButton(text) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color c = getModel().isPressed() ? bg.darker() : getModel().isRollover() ? bg.brighter() : bg;
+                g2.setColor(c);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("Arial", Font.BOLD, 12));
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(7, 16, 7, 16));
+        return btn;
+    }
+
 }

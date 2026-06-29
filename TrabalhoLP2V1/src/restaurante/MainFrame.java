@@ -22,7 +22,7 @@ public class MainFrame extends JFrame {
 
     public MainFrame(RestauranteController controller) {
         this.controller = controller;
-        setTitle("MEZA — Gestão de Restaurante");
+        setTitle("Fogo na Chapa — Churrascaria");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1400, 800);
         setLocationRelativeTo(null);
@@ -70,16 +70,16 @@ public class MainFrame extends JFrame {
         JPanel logoPanel = new JPanel();
         logoPanel.setBackground(new Color(0, 122, 255));
         logoPanel.setPreferredSize(new Dimension(28, 28));
-        JLabel logoLabel = new JLabel("⊞");
+        JLabel logoLabel = new JLabel("🍖");
         logoLabel.setForeground(Color.WHITE);
         logoLabel.setFont(new Font("Arial", Font.BOLD, 16));
         logoPanel.add(logoLabel);
 
-        JLabel titleLabel = new JLabel("MEZA");
+        JLabel titleLabel = new JLabel("Fogo na Chapa");
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 15));
 
-        JLabel subtitleLabel = new JLabel("Gestão de Restaurante");
+        JLabel subtitleLabel = new JLabel("Churrascaria");
         subtitleLabel.setForeground(new Color(136, 136, 136));
         subtitleLabel.setFont(new Font("Arial", Font.PLAIN, 12));
 
@@ -145,6 +145,7 @@ public class MainFrame extends JFrame {
             final String viewId = navItems[i];
             JButton navBtn = createNavButton(navLabels[i], viewId.equals("dashboard"));
             navBtn.addActionListener(e -> switchView(viewId, navBtn));
+            navButtons.add(navBtn);
             sidebar.add(navBtn);
         }
 
@@ -199,37 +200,58 @@ public class MainFrame extends JFrame {
     }
 
     private JButton createNavButton(String label, boolean active) {
-        JButton btn = new JButton(label);
+        JButton btn = new JButton(label) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
         btn.setMaximumSize(new Dimension(200, 44));
         btn.setPreferredSize(new Dimension(200, 44));
-        btn.setBackground(active ? new Color(58, 58, 58) : new Color(26, 26, 26));
+        btn.setBackground(active ? new Color(0, 100, 210) : new Color(26, 26, 26));
         btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("Arial", Font.PLAIN, 13));
-        btn.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        btn.setFont(new Font("Arial", Font.BOLD, 13));
+        btn.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
         btn.setFocusPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseEntered(java.awt.event.MouseEvent evt) {
-                if (!btn.getBackground().equals(new Color(58, 58, 58))) btn.setBackground(new Color(45, 45, 45));
+                Color cur = btn.getBackground();
+                if (!cur.equals(new Color(0, 100, 210))) btn.setBackground(new Color(45, 48, 70));
             }
             @Override public void mouseExited(java.awt.event.MouseEvent evt) {
-                if (!btn.getBackground().equals(new Color(58, 58, 58))) btn.setBackground(new Color(26, 26, 26));
+                Color cur = btn.getBackground();
+                if (!cur.equals(new Color(0, 100, 210))) btn.setBackground(new Color(26, 26, 26));
             }
         });
 
         return btn;
     }
 
+    private java.util.List<JButton> navButtons = new java.util.ArrayList<>();
+
     public void switchView(String viewId, JButton button) {
         currentView = viewId;
         CardLayout cl = (CardLayout) contentPanel.getLayout();
         cl.show(contentPanel, viewId);
+        // Update button highlight
+        for (JButton b : navButtons) {
+            b.setBackground(new Color(26, 26, 26));
+        }
+        if (button != null) button.setBackground(new Color(0, 100, 210));
         if (viewId.equals("dashboard")) dashboardPanel.refresh();
         else if (viewId.equals("pedidos")) orderPanel.refresh();
         else if (viewId.equals("clientes")) clientPanel.refresh();
         else if (viewId.equals("cardapio")) menuPanel.refresh();
+        refreshSidebar();
     }
 
     public void refreshSidebar() {

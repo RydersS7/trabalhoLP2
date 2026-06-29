@@ -10,12 +10,14 @@ public class RestauranteController {
     private List<Cliente> listaClientes;
     private List<ItemCardapio> listaCardapio;
     private List<Pedido> listaPedidosAtivos;
+    private List<Pedido> listaPedidosFinalizados;
 
     public RestauranteController() {
         this.listaMesas = new ArrayList<>();
         this.listaClientes = new ArrayList<>();
         this.listaCardapio = new ArrayList<>();
         this.listaPedidosAtivos = new ArrayList<>();
+        this.listaPedidosFinalizados = new ArrayList<>();
 
         inicializarMesas();
         inicializarCardapio();
@@ -66,6 +68,7 @@ public class RestauranteController {
     public List<Cliente> getListaClientes() { return listaClientes; }
     public List<ItemCardapio> getListaCardapio() { return listaCardapio; }
     public List<Pedido> getListaPedidosAtivos() { return listaPedidosAtivos; }
+    public List<Pedido> getListaPedidosFinalizados() { return listaPedidosFinalizados; }
 
     // ======================== MESAS ========================
 
@@ -253,12 +256,25 @@ public class RestauranteController {
         pedido.setDataHoraFechada(java.time.LocalDateTime.now());
 
         listaPedidosAtivos.remove(pedido);
+        listaPedidosFinalizados.add(pedido);
         fecharMesa(numeroMesa);
     }
 
     public Pedido buscarPedidoDaMesa(int numeroMesa) {
         Mesa mesa = buscarMesaPorNumero(numeroMesa);
         return mesa != null ? mesa.getPedidoAtual() : null;
+    }
+
+    public Mesa buscarMesaAtivaDoCliente(Cliente cliente) {
+        if (cliente == null) return null;
+        for (Mesa mesa : listaMesas) {
+            if (mesa.getStatus() == StatusMesa.OCUPADA
+                    && mesa.getClienteAtual() != null
+                    && mesa.getClienteAtual().getCpf().equals(cliente.getCpf())) {
+                return mesa;
+            }
+        }
+        return null;
     }
 
     // ======================== ESTATÍSTICAS ========================

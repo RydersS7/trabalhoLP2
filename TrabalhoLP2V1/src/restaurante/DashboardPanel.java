@@ -93,12 +93,24 @@ public class DashboardPanel extends JPanel {
         btn.add(Box.createVerticalStrut(8));
         btn.add(statusLabelComp);
 
-        if (!isLivre && mesa.getClienteAtual() != null) {
-            JLabel clientLabel = new JLabel(truncate(mesa.getClienteAtual().getNome(), 12));
+        if (!isLivre) {
+            // Show client name if present
+            String clienteNome = mesa.getClienteAtual() != null ? mesa.getClienteAtual().getNome() : "—";
+            JLabel clientLabel = new JLabel(truncate(clienteNome, 12));
             clientLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             clientLabel.setFont(new Font("Arial", Font.PLAIN, 9));
             clientLabel.setForeground(new Color(150, 80, 40));
             btn.add(clientLabel);
+            // Show item count if there's a pedido with items
+            model.Pedido pedido = mesa.getPedidoAtual();
+            if (pedido != null && !pedido.getItens().isEmpty()) {
+                int nItens = pedido.obterQuantidadeTotalItens();
+                JLabel itensLabel = new JLabel(nItens + " item(s)");
+                itensLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                itensLabel.setFont(new Font("Arial", Font.PLAIN, 8));
+                itensLabel.setForeground(new Color(100, 100, 180));
+                btn.add(itensLabel);
+            }
         }
 
         if (isLivre) {
@@ -237,62 +249,72 @@ public class DashboardPanel extends JPanel {
 
     private void showTableDetailsModal(int numeroMesa) {
         JDialog modal = new JDialog((JFrame) parentFrame, "Mesa " + numeroMesa, true);
-        modal.setSize(480, 380);
+        modal.setSize(520, 440);
         modal.setLocationRelativeTo(parentFrame);
 
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         contentPanel.setBackground(Color.WHITE);
 
         Cliente cliente = controller.obterClienteDaMesa(numeroMesa);
         model.Pedido pedido = controller.buscarPedidoDaMesa(numeroMesa);
 
-        JLabel titleLbl = new JLabel("Mesa " + numeroMesa + " — " + (cliente != null ? cliente.getNome() : "Sem cliente"));
-        titleLbl.setFont(new Font("Arial", Font.BOLD, 14));
-        titleLbl.setForeground(new Color(51, 51, 51));
+        // Title
+        String clienteNome = (cliente != null) ? cliente.getNome() : (pedido != null && pedido.getCliente() != null ? pedido.getCliente().getNome() : "Sem cliente");
+        JLabel titleLbl = new JLabel("Mesa " + numeroMesa + " — " + clienteNome);
+        titleLbl.setFont(new Font("Arial", Font.BOLD, 15));
+        titleLbl.setForeground(new Color(22, 24, 35));
         contentPanel.add(titleLbl);
 
+        // Status badge
+        if (pedido != null) {
+            JLabel statusLbl = new JLabel("Status: " + pedido.getStatus() + "   •   Tempo: " + pedido.obterTempoFormatado());
+            statusLbl.setFont(new Font("Arial", Font.PLAIN, 11));
+            statusLbl.setForeground(new Color(100, 105, 150));
+            contentPanel.add(statusLbl);
+        }
+
         if (cliente != null) {
-            JLabel bonusLbl = new JLabel(String.format("Bônus disponível: R$ %.2f", cliente.getBonus()));
+            JLabel bonusLbl = new JLabel(String.format("💰 Bônus disponível: R$ %.2f", cliente.getBonus()));
             bonusLbl.setFont(new Font("Arial", Font.PLAIN, 11));
             bonusLbl.setForeground(new Color(76, 175, 80));
             contentPanel.add(bonusLbl);
         }
-        contentPanel.add(Box.createVerticalStrut(10));
+        contentPanel.add(Box.createVerticalStrut(14));
 
+        // Pedido items
         if (pedido != null && !pedido.getItens().isEmpty()) {
             JLabel itensTitle = new JLabel("Itens do Pedido:");
-            itensTitle.setFont(new Font("Arial", Font.BOLD, 11));
-            itensTitle.setForeground(new Color(51, 51, 51));
+            itensTitle.setFont(new Font("Arial", Font.BOLD, 12));
+            itensTitle.setForeground(new Color(22, 24, 35));
             contentPanel.add(itensTitle);
+            contentPanel.add(Box.createVerticalStrut(6));
 
             for (model.ItemPedido ip : pedido.getItens()) {
-                JLabel itemLbl = new JLabel("  • " + ip.toString());
-                itemLbl.setFont(new Font("Arial", Font.PLAIN, 11));
-                itemLbl.setForeground(new Color(60, 60, 60));
+                String entregueStr = ip.isEntregue() ? " ✅" : " ⏳";
+                JLabel itemLbl = new JLabel(String.format("  %d×  %s  [%s]  — R$ %.2f%s",
+                    ip.getQuantidade(), ip.getItem().getNome(),
+                    ip.getItem().getCategoria(), ip.calcularSubtotal(), entregueStr));
+                itemLbl.setFont(new Font("Arial", Font.PLAIN, 12));
+                itemLbl.setForeground(ip.isEntregue() ? new Color(120, 165, 120) : new Color(40, 44, 60));
                 contentPanel.add(itemLbl);
             }
+            contentPanel.add(Box.createVerticalStrut(10));
+
+            JSeparator sep = new JSeparator();
+            sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+            contentPanel.add(sep);
             contentPanel.add(Box.createVerticalStrut(8));
 
             JLabel totalLbl = new JLabel(String.format("Total: R$ %.2f", pedido.calcularTotal()));
-            totalLbl.setFont(new Font("Arial", Font.BOLD, 12));
-            totalLbl.setForeground(new Color(51, 51, 51));
+            totalLbl.setFont(new Font("Arial", Font.BOLD, 13));
+            totalLbl.setForeground(new Color(22, 24, 35));
             contentPanel.add(totalLbl);
-
-            JLabel statusLbl = new JLabel("Status: " + pedido.getStatus());
-            statusLbl.setFont(new Font("Arial", Font.PLAIN, 11));
-            statusLbl.setForeground(new Color(100, 100, 200));
-            contentPanel.add(statusLbl);
-
-            JLabel tempoLbl = new JLabel("Tempo na mesa: " + pedido.obterTempoFormatado());
-            tempoLbl.setFont(new Font("Arial", Font.PLAIN, 11));
-            tempoLbl.setForeground(new Color(120, 120, 120));
-            contentPanel.add(tempoLbl);
         } else {
             JLabel emptyLbl = new JLabel("Nenhum item no pedido ainda.");
             emptyLbl.setFont(new Font("Arial", Font.ITALIC, 11));
-            emptyLbl.setForeground(new Color(150, 150, 150));
+            emptyLbl.setForeground(new Color(160, 165, 185));
             contentPanel.add(emptyLbl);
         }
 
@@ -447,7 +469,10 @@ public class DashboardPanel extends JPanel {
         refreshTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                SwingUtilities.invokeLater(() -> refreshGridPanel());
+                SwingUtilities.invokeLater(() -> {
+                    refreshGridPanel();
+                    if (parentFrame instanceof MainFrame) ((MainFrame) parentFrame).refreshSidebar();
+                });
             }
         }, 0, 2000);
     }
@@ -459,4 +484,27 @@ public class DashboardPanel extends JPanel {
         super.removeNotify();
         if (refreshTimer != null) refreshTimer.cancel();
     }
+
+    private JButton styledBtn(String text, Color bg) {
+        JButton btn = new JButton(text) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color c = getModel().isPressed() ? bg.darker() : getModel().isRollover() ? bg.brighter() : bg;
+                g2.setColor(c);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("Arial", Font.BOLD, 12));
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(7, 16, 7, 16));
+        return btn;
+    }
+
 }

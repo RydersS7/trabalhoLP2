@@ -15,9 +15,9 @@ public class LoginScreen extends JFrame {
 
     public LoginScreen(RestauranteController controller) {
         this.controller = controller;
-        setTitle("MEZA — Bem-vindo");
+        setTitle("Fogo na Chapa — Bem-vindo");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(860, 580);
+        setSize(980, 620);
         setLocationRelativeTo(null);
         setResizable(false);
         initComponents();
@@ -60,12 +60,12 @@ public class LoginScreen extends JFrame {
                 g2.dispose();
             }
         };
-        panel.setPreferredSize(new Dimension(300, 0));
+        panel.setPreferredSize(new Dimension(420, 0));
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(56, 38, 56, 38));
 
         // Logo
-        JLabel logoIcon = new JLabel("⊞") {
+        JLabel logoIcon = new JLabel("🍖") {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -85,12 +85,12 @@ public class LoginScreen extends JFrame {
         logoIcon.setMinimumSize(new Dimension(48, 48));
         logoIcon.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel brandName = new JLabel("MEZA");
+        JLabel brandName = new JLabel("Fogo na Chapa");
         brandName.setForeground(Color.WHITE);
-        brandName.setFont(new Font("Arial", Font.BOLD, 32));
+        brandName.setFont(new Font("Arial", Font.BOLD, 26));
         brandName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel brandSub = new JLabel("Gestão de Restaurante");
+        JLabel brandSub = new JLabel("Churrascaria");
         brandSub.setForeground(new Color(140, 145, 170));
         brandSub.setFont(new Font("Arial", Font.PLAIN, 12));
         brandSub.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -102,7 +102,7 @@ public class LoginScreen extends JFrame {
         panel.add(brandSub);
         panel.add(Box.createVerticalGlue());
 
-        String[] feats = {"Mesas em tempo real", "Cardápio digital", "Programa de fidelidade", "Visão da cozinha"};
+        String[] feats = {"Mesas em tempo real", "Cardápio digital", "Visão da cozinha", "Senha gerente: admin123"};
         for (String f : feats) {
             JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
             row.setOpaque(false);
@@ -139,7 +139,7 @@ public class LoginScreen extends JFrame {
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(225, 228, 240), 1),
                 BorderFactory.createEmptyBorder(36, 36, 36, 36)));
-        card.setPreferredSize(new Dimension(390, 430));
+        card.setPreferredSize(new Dimension(390, 470));
 
         JLabel title = new JLabel("Bem-vindo de volta");
         title.setFont(new Font("Arial", Font.BOLD, 21));
@@ -176,6 +176,32 @@ public class LoginScreen extends JFrame {
         card.add(roleRow);
         card.add(Box.createVerticalStrut(20));
 
+        // Password field (gerente only)
+        JPanel senhaWrap = new JPanel();
+        senhaWrap.setBackground(Color.WHITE);
+        senhaWrap.setLayout(new BoxLayout(senhaWrap, BoxLayout.Y_AXIS));
+        senhaWrap.setAlignmentX(Component.LEFT_ALIGNMENT);
+        senhaWrap.setVisible(true);
+
+        JLabel senhaLbl = new JLabel("Senha do Gerente");
+        senhaLbl.setFont(new Font("Arial", Font.BOLD, 11));
+        senhaLbl.setForeground(new Color(60, 65, 80));
+        senhaLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPasswordField senhaField = new JPasswordField();
+        senhaField.setFont(new Font("Arial", Font.PLAIN, 12));
+        senhaField.setForeground(new Color(22, 24, 35));
+        senhaField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(210, 215, 230), 1),
+                BorderFactory.createEmptyBorder(7, 11, 7, 11)));
+        senhaField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        senhaField.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        senhaWrap.add(senhaLbl);
+        senhaWrap.add(Box.createVerticalStrut(5));
+        senhaWrap.add(senhaField);
+        card.add(senhaWrap);
+
         // CPF field (cliente only)
         JPanel cpfWrap = new JPanel();
         cpfWrap.setBackground(Color.WHITE);
@@ -196,7 +222,9 @@ public class LoginScreen extends JFrame {
 
         // Toggle visibility
         ActionListener toggle = e -> {
-            cpfWrap.setVisible(cliBtn.isSelected());
+            boolean isGerente = gerBtn.isSelected();
+            senhaWrap.setVisible(isGerente);
+            cpfWrap.setVisible(!isGerente);
             card.revalidate(); card.repaint();
         };
         gerBtn.addActionListener(toggle);
@@ -210,6 +238,12 @@ public class LoginScreen extends JFrame {
         enterBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         enterBtn.addActionListener(e -> {
             if (gerBtn.isSelected()) {
+                String senha = new String(senhaField.getPassword());
+                if (!senha.equals("admin123")) {
+                    JOptionPane.showMessageDialog(this, "Senha incorreta!", "Acesso negado", JOptionPane.ERROR_MESSAGE);
+                    senhaField.setText("");
+                    return;
+                }
                 openManager();
             } else {
                 String cpf = cpfField.getText().replaceAll("[^0-9]", "");
@@ -360,13 +394,13 @@ public class LoginScreen extends JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 boolean sel = isSelected();
-                g2.setColor(sel ? new Color(232, 242, 255) : new Color(249, 250, 253));
+                g2.setColor(sel ? new Color(0, 122, 255) : new Color(55, 58, 80));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                g2.setColor(sel ? new Color(0, 122, 255) : new Color(210, 214, 230));
-                g2.setStroke(sel ? new BasicStroke(2f) : new BasicStroke(1f));
-                g2.drawRoundRect(sel ? 1 : 0, sel ? 1 : 0,
-                        sel ? getWidth() - 2 : getWidth() - 1,
-                        sel ? getHeight() - 2 : getHeight() - 1, 8, 8);
+                if (sel) {
+                    g2.setColor(new Color(0, 90, 200));
+                    g2.setStroke(new BasicStroke(2f));
+                    g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 8, 8);
+                }
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -377,12 +411,12 @@ public class LoginScreen extends JFrame {
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         JLabel t = new JLabel(title);
-        t.setFont(new Font("Arial", Font.BOLD, 12));
-        t.setForeground(new Color(22, 24, 35));
+        t.setFont(new Font("Arial", Font.BOLD, 13));
+        t.setForeground(Color.WHITE);
         t.setAlignmentX(Component.CENTER_ALIGNMENT);
         JLabel s = new JLabel(subtitle);
         s.setFont(new Font("Arial", Font.PLAIN, 10));
-        s.setForeground(new Color(110, 115, 140));
+        s.setForeground(new Color(200, 210, 230));
         s.setAlignmentX(Component.CENTER_ALIGNMENT);
         btn.add(Box.createVerticalGlue());
         btn.add(t); btn.add(Box.createVerticalStrut(2)); btn.add(s);
