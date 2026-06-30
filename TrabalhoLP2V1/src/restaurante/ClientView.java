@@ -30,7 +30,7 @@ public class ClientView extends JFrame {
     private DefaultTableModel itensPedidoModel; // itens já enviados à cozinha
     private JLabel itensPedidoTotalLbl;
 
-    // Mesa selection screen
+    // Tela de seleção de mesa
     private JPanel mesaSelectionPanel;
     private JPanel mainPanel;
     private CardLayout rootCardLayout;
@@ -70,13 +70,16 @@ public class ClientView extends JFrame {
             rootCardLayout.show(root, "mesa");
             startMesaRefreshTimer();
         }
+
+        // Aplica o tema persistido (caso o usuário já tenha alternado anteriormente)
+        ThemeManager.apply(root);
     }
 
     private JPanel buildMesaSelectionPanel() {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(new Color(245, 246, 250));
 
-        // Header
+        // Cabeçalho
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(new Color(18, 18, 24));
         header.setBorder(BorderFactory.createEmptyBorder(0, 28, 0, 20));
@@ -110,11 +113,13 @@ public class ClientView extends JFrame {
             dispose();
             SwingUtilities.invokeLater(() -> new LoginScreen(controller).setVisible(true));
         });
-        rightH.add(userLbl); rightH.add(sairBtn);
+        rightH.add(userLbl);
+        rightH.add(ThemeManager.createToggleButton(this.getContentPane()));
+        rightH.add(sairBtn);
         header.add(rightH, BorderLayout.EAST);
         root.add(header, BorderLayout.NORTH);
 
-        // Content
+        // Conteúdo
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBackground(new Color(245, 246, 250));
@@ -143,7 +148,7 @@ public class ClientView extends JFrame {
 
         content.add(mesaGridPanel);
 
-        // Legend
+        // Legenda
         JPanel legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
         legend.setBackground(new Color(245, 246, 250));
         legend.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -170,29 +175,47 @@ public class ClientView extends JFrame {
         }
         mesaGridPanel.revalidate();
         mesaGridPanel.repaint();
+        ThemeManager.apply(mesaGridPanel);
     }
 
     private JButton createMesaBtn(Mesa mesa) {
         boolean isLivre = mesa.getStatus() == StatusMesa.LIVRE;
-        JButton btn = new JButton();
+        Color baseBg = isLivre ? new Color(235, 247, 235) : new Color(255, 235, 230);
+        Color borderColor = isLivre ? new Color(150, 205, 150) : new Color(240, 150, 132);
+
+        JButton btn = new JButton() {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color fill = (isEnabled() && getModel().isRollover()) ? getBackground().darker() : getBackground();
+                g2.setColor(fill);
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
+                g2.setColor(borderColor);
+                g2.setStroke(new BasicStroke(1.6f));
+                g2.drawRoundRect(0, 0, getWidth() - 2, getHeight() - 2, 14, 14);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setOpaque(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
         btn.setLayout(new BoxLayout(btn, BoxLayout.Y_AXIS));
-        btn.setBackground(isLivre ? new Color(235, 247, 235) : new Color(255, 235, 230));
-        btn.setBorder(BorderFactory.createLineBorder(
-            isLivre ? new Color(160, 215, 160) : new Color(250, 168, 150), 2));
+        btn.setBackground(baseBg);
         btn.setFocusPainted(false);
         btn.setCursor(isLivre ? new Cursor(Cursor.HAND_CURSOR) : new Cursor(Cursor.DEFAULT_CURSOR));
-        btn.setPreferredSize(new Dimension(120, 110));
+        btn.setPreferredSize(new Dimension(122, 112));
         btn.setEnabled(isLivre);
 
         JLabel numberLabel = new JLabel(String.format("MESA %d", mesa.getNumero()));
         numberLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        numberLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        numberLabel.setFont(new Font("Arial", Font.BOLD, 14));
         numberLabel.setForeground(new Color(51, 51, 51));
 
         JLabel statusLabel = new JLabel(isLivre ? "LIVRE" : "OCUPADA");
         statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        statusLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        statusLabel.setForeground(isLivre ? new Color(76, 175, 80) : new Color(244, 67, 54));
+        statusLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        statusLabel.setForeground(isLivre ? new Color(56, 145, 60) : new Color(214, 47, 34));
 
         btn.add(Box.createVerticalStrut(12));
         btn.add(numberLabel);
@@ -255,7 +278,7 @@ public class ClientView extends JFrame {
         return root;
     }
 
-    // ── HEADER ───────────────────────────────────────────────────────────────
+    // ── CABEÇALHO ───────────────────────────────────────────────────────────────
     private JPanel buildHeader() {
         JPanel h = new JPanel(new BorderLayout());
         h.setBackground(new Color(18, 18, 24));
@@ -301,7 +324,9 @@ public class ClientView extends JFrame {
             SwingUtilities.invokeLater(() -> new LoginScreen(controller).setVisible(true));
         });
 
-        right.add(carrinhoCountLbl); right.add(userLbl); right.add(sairBtn);
+        right.add(carrinhoCountLbl); right.add(userLbl);
+        right.add(ThemeManager.createToggleButton(this.getContentPane()));
+        right.add(sairBtn);
         h.add(right, BorderLayout.EAST);
         return h;
     }
@@ -504,7 +529,7 @@ public class ClientView extends JFrame {
         panel.setBackground(new Color(245, 246, 250));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 28, 20, 28));
 
-        // Header
+        // Cabeçalho
         JLabel pageTitle = new JLabel("Meu Pedido");
         pageTitle.setFont(new Font("Arial", Font.BOLD, 18));
         pageTitle.setForeground(new Color(22, 24, 35));
@@ -530,7 +555,7 @@ public class ClientView extends JFrame {
         JTable enviadosTable = new JTable(itensPedidoModel);
         enviadosTable.setFont(new Font("Arial", Font.PLAIN, 12));
         enviadosTable.setForeground(new Color(40, 44, 60));
-        enviadosTable.setRowHeight(26);
+        enviadosTable.setRowHeight(28);
         enviadosTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 11));
         enviadosTable.getTableHeader().setBackground(new Color(220, 240, 220));
         enviadosTable.getTableHeader().setForeground(new Color(40, 80, 40));
@@ -840,6 +865,7 @@ public class ClientView extends JFrame {
         cp.add(btnRow);
 
         dialog.add(cp);
+        ThemeManager.apply(dialog);
         dialog.setVisible(true);
     }
 

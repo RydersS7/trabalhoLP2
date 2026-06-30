@@ -14,14 +14,14 @@ public class OrderPanel extends JPanel {
     private RestauranteController controller;
     private JFrame parentFrame;
 
-    // Tab: Pedidos finalizados
+    // Aba: Pedidos finalizados
     private JTable pedidosTable;
     private DefaultTableModel pedidosModel;
 
-    // Tab: Cozinha (pedidos ativos/pendentes)
+    // Aba: Cozinha (pedidos ativos/pendentes)
     private JTable cozinhaTable;
     private DefaultTableModel cozinhaModel;
-    private JPanel cozinhaCardsContainer; // direct ref for refresh
+    private JPanel cozinhaCardsContainer; // referência direta para atualização
 
     public OrderPanel(RestauranteController controller, JFrame parentFrame) {
         this.controller = controller;
@@ -48,7 +48,7 @@ public class OrderPanel extends JPanel {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(245, 245, 245));
 
-        // Header
+        // Cabeçalho
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(new Color(245, 245, 245));
         header.setBorder(BorderFactory.createEmptyBorder(20, 28, 12, 28));
@@ -71,7 +71,7 @@ public class OrderPanel extends JPanel {
         header.add(titles, BorderLayout.WEST);
         panel.add(header, BorderLayout.NORTH);
 
-        // Table
+        // Tabela
         String[] cols = {"#", "Mesa", "Cliente", "Itens", "Total (R$)", "Status"};
         pedidosModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -85,7 +85,7 @@ public class OrderPanel extends JPanel {
         pedidosTable.getColumnModel().getColumn(5).setMaxWidth(90);
         pedidosTable.getColumnModel().getColumn(3).setPreferredWidth(320);
 
-        // Color PAGO rows green
+        // Colore de verde as linhas com status PAGO
         pedidosTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r, int c) {
@@ -124,7 +124,7 @@ public class OrderPanel extends JPanel {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(245, 245, 245));
 
-        // Header
+        // Cabeçalho
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(new Color(245, 245, 245));
         header.setBorder(BorderFactory.createEmptyBorder(20, 28, 12, 28));
@@ -162,7 +162,7 @@ public class OrderPanel extends JPanel {
 
         panel.add(header, BorderLayout.NORTH);
 
-        // Cards scroll area
+        // Área de rolagem dos cartões
         JPanel cardsContent = new JPanel();
         cardsContent.setLayout(new BoxLayout(cardsContent, BoxLayout.Y_AXIS));
         cardsContent.setBackground(new Color(245, 245, 245));
@@ -197,6 +197,7 @@ public class OrderPanel extends JPanel {
         }
         container.revalidate();
         container.repaint();
+        ThemeManager.apply(container);
     }
 
     private void refreshCozinhaCards() {
@@ -214,7 +215,7 @@ public class OrderPanel extends JPanel {
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 999));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Card header
+        // Cabeçalho do cartão
         String clienteNome = pedido.getCliente() != null ? pedido.getCliente().getNome() : "Sem cliente";
         JPanel cardHeader = new JPanel(new BorderLayout());
         cardHeader.setBackground(Color.WHITE);
@@ -225,7 +226,7 @@ public class OrderPanel extends JPanel {
         headerLbl.setForeground(new Color(22, 24, 35));
         cardHeader.add(headerLbl, BorderLayout.WEST);
 
-        // Status badge
+        // Selo de status
         JLabel statusBadge = new JLabel("  " + pedido.getStatus() + "  ");
         statusBadge.setFont(new Font("Arial", Font.BOLD, 10));
         statusBadge.setForeground(Color.WHITE);
@@ -240,14 +241,14 @@ public class OrderPanel extends JPanel {
         card.add(cardHeader);
         card.add(Box.createVerticalStrut(10));
 
-        // Separator
+        // Separador
         JSeparator sep = new JSeparator();
         sep.setForeground(new Color(230, 233, 245));
         sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
         card.add(sep);
         card.add(Box.createVerticalStrut(10));
 
-        // Items
+        // Itens
         for (ItemPedido ip : pedido.getItens()) {
             JPanel itemRow = new JPanel(new BorderLayout());
             itemRow.setBackground(Color.WHITE);
@@ -276,7 +277,7 @@ public class OrderPanel extends JPanel {
 
         card.add(Box.createVerticalStrut(10));
 
-        // Footer
+        // Rodapé
         JPanel footer = new JPanel(new BorderLayout());
         footer.setBackground(Color.WHITE);
 
@@ -312,7 +313,7 @@ public class OrderPanel extends JPanel {
         return card;
     }
 
-    // ── TABLE REFRESH ─────────────────────────────────────────────────────────
+    // ── ATUALIZAÇÃO DE TABELA ─────────────────────────────────────────────────────────
     private void refreshPedidosTable() {
         pedidosModel.setRowCount(0);
         java.util.List<Pedido> finalizados = controller.getListaPedidosFinalizados();
@@ -398,6 +399,7 @@ public class OrderPanel extends JPanel {
         btnPanel.add(cancelBtn); btnPanel.add(confirmBtn);
         cp.add(btnPanel);
         modal.add(cp);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 
@@ -476,6 +478,7 @@ public class OrderPanel extends JPanel {
         btnPanel.add(cancelBtn); btnPanel.add(confirmBtn);
         cp.add(btnPanel);
         modal.add(cp);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 

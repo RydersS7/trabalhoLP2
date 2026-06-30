@@ -9,7 +9,7 @@ public class LoginScreen extends JFrame {
 
     private RestauranteController controller;
 
-    // Card panel references for switching login / register
+    // Referências dos painéis para alternar entre login / cadastro
     private JPanel cardContainer;
     private CardLayout cardLayout;
 
@@ -30,7 +30,7 @@ public class LoginScreen extends JFrame {
 
         root.add(buildLeftPanel(), BorderLayout.WEST);
 
-        // Right side uses CardLayout to flip between Login and Register
+        // O lado direito usa CardLayout para alternar entre Login e Cadastro
         cardLayout = new CardLayout();
         cardContainer = new JPanel(cardLayout);
         cardContainer.setBackground(new Color(245, 246, 250));
@@ -39,6 +39,9 @@ public class LoginScreen extends JFrame {
         cardLayout.show(cardContainer, "login");
 
         root.add(cardContainer, BorderLayout.CENTER);
+
+        // Aplica o tema persistido (caso o usuário já tenha alternado anteriormente)
+        ThemeManager.apply(root);
     }
 
     // ── LEFT BRANDING PANEL ──────────────────────────────────────────────────
@@ -64,7 +67,7 @@ public class LoginScreen extends JFrame {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(56, 38, 56, 38));
 
-        // Logo
+        // Logotipo
         JLabel logoIcon = new JLabel("🍖") {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -119,6 +122,12 @@ public class LoginScreen extends JFrame {
         }
 
         panel.add(Box.createVerticalGlue());
+
+        JButton themeBtn = ThemeManager.createToggleButton(this.getContentPane());
+        themeBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(themeBtn);
+        panel.add(Box.createVerticalStrut(14));
+
         JLabel ver = new JLabel("v1.0.0 — 2026");
         ver.setForeground(new Color(70, 75, 100));
         ver.setFont(new Font("Arial", Font.PLAIN, 10));
@@ -128,7 +137,7 @@ public class LoginScreen extends JFrame {
         return panel;
     }
 
-    // ── LOGIN CARD ───────────────────────────────────────────────────────────
+    // ── CARTÃO DE LOGIN ───────────────────────────────────────────────────────────
     private JPanel buildLoginCard() {
         JPanel outer = new JPanel(new GridBagLayout());
         outer.setBackground(new Color(245, 246, 250));
@@ -154,9 +163,9 @@ public class LoginScreen extends JFrame {
         card.add(title); card.add(Box.createVerticalStrut(4)); card.add(sub);
         card.add(Box.createVerticalStrut(28));
 
-        // Role toggle
+        // Alternância de perfil
         JLabel roleLbl = new JLabel("PERFIL DE ACESSO");
-        roleLbl.setFont(new Font("Arial", Font.BOLD, 9));
+        roleLbl.setFont(new Font("Arial", Font.BOLD, 10));
         roleLbl.setForeground(new Color(110, 115, 140));
         roleLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.add(roleLbl);
@@ -176,7 +185,7 @@ public class LoginScreen extends JFrame {
         card.add(roleRow);
         card.add(Box.createVerticalStrut(20));
 
-        // Password field (gerente only)
+        // Campo de senha (somente gerente)
         JPanel senhaWrap = new JPanel();
         senhaWrap.setBackground(Color.WHITE);
         senhaWrap.setLayout(new BoxLayout(senhaWrap, BoxLayout.Y_AXIS));
@@ -202,7 +211,7 @@ public class LoginScreen extends JFrame {
         senhaWrap.add(senhaField);
         card.add(senhaWrap);
 
-        // CPF field (cliente only)
+        // Campo de CPF (somente cliente)
         JPanel cpfWrap = new JPanel();
         cpfWrap.setBackground(Color.WHITE);
         cpfWrap.setLayout(new BoxLayout(cpfWrap, BoxLayout.Y_AXIS));
@@ -220,7 +229,7 @@ public class LoginScreen extends JFrame {
         cpfWrap.add(cpfField);
         card.add(cpfWrap);
 
-        // Toggle visibility
+        // Alterna a visibilidade
         ActionListener toggle = e -> {
             boolean isGerente = gerBtn.isSelected();
             senhaWrap.setVisible(isGerente);
@@ -232,7 +241,7 @@ public class LoginScreen extends JFrame {
 
         card.add(Box.createVerticalStrut(24));
 
-        // Enter button
+        // Botão de entrar
         JButton enterBtn = filledBtn("Entrar no sistema", new Color(0, 122, 255));
         enterBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         enterBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
@@ -257,7 +266,7 @@ public class LoginScreen extends JFrame {
         card.add(enterBtn);
         card.add(Box.createVerticalStrut(14));
 
-        // Register link
+        // Link de cadastro
         JPanel linkRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
         linkRow.setBackground(Color.WHITE);
         linkRow.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -279,7 +288,7 @@ public class LoginScreen extends JFrame {
         return outer;
     }
 
-    // ── REGISTER CARD ────────────────────────────────────────────────────────
+    // ── CARTÃO DE CADASTRO ────────────────────────────────────────────────────────
     private JPanel buildRegisterCard() {
         JPanel outer = new JPanel(new GridBagLayout());
         outer.setBackground(new Color(245, 246, 250));
@@ -355,7 +364,7 @@ public class LoginScreen extends JFrame {
                 JOptionPane.showMessageDialog(this,
                         "Conta criada com sucesso! Bem-vindo(a), " + nome.split(" ")[0] + "!",
                         "Cadastro realizado", JOptionPane.INFORMATION_MESSAGE);
-                // Auto-login
+                // Login automático
                 model.Cliente novo = controller.buscarClientePorCpf(cpf);
                 dispose();
                 SwingUtilities.invokeLater(() -> new ClientView(controller, novo).setVisible(true));

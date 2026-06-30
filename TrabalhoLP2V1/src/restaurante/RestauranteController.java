@@ -62,7 +62,7 @@ public class RestauranteController {
         adicionarBebida("Café Expresso", 6.50, "Illy", "50ml");
     }
 
-    // ======================== GETTERS ========================
+    // ======================== MÉTODOS DE ACESSO ========================
 
     public List<Mesa> getListaMesas() { return listaMesas; }
     public List<Cliente> getListaClientes() { return listaClientes; }

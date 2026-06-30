@@ -64,29 +64,47 @@ public class DashboardPanel extends JPanel {
             gridPanel.add(createTableButton(mesa));
         gridPanel.revalidate();
         gridPanel.repaint();
+        ThemeManager.apply(gridPanel);
     }
 
     private JButton createTableButton(Mesa mesa) {
-        JButton btn = new JButton();
         boolean isLivre = mesa.getStatus() == StatusMesa.LIVRE;
+        Color baseBg = isLivre ? new Color(235, 247, 235) : new Color(255, 235, 230);
+        Color borderColor = isLivre ? new Color(150, 205, 150) : new Color(240, 150, 132);
+
+        JButton btn = new JButton() {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color fill = getModel().isRollover() ? getBackground().darker() : getBackground();
+                g2.setColor(fill);
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
+                g2.setColor(borderColor);
+                g2.setStroke(new BasicStroke(1.6f));
+                g2.drawRoundRect(0, 0, getWidth() - 2, getHeight() - 2, 14, 14);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setOpaque(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
 
         btn.setLayout(new BoxLayout(btn, BoxLayout.Y_AXIS));
-        btn.setBackground(isLivre ? new Color(235, 247, 235) : new Color(255, 235, 230));
-        btn.setBorder(BorderFactory.createLineBorder(
-            isLivre ? new Color(160, 215, 160) : new Color(250, 168, 150), 2));
+        btn.setBackground(baseBg);
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(110, 110));
+        btn.setPreferredSize(new Dimension(112, 112));
 
         JLabel numberLabel = new JLabel(String.format("MESA %d", mesa.getNumero()));
         numberLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        numberLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        numberLabel.setFont(new Font("Arial", Font.BOLD, 14));
         numberLabel.setForeground(new Color(51, 51, 51));
 
         JLabel statusLabelComp = new JLabel(isLivre ? "LIVRE" : "OCUPADA");
         statusLabelComp.setAlignmentX(Component.CENTER_ALIGNMENT);
-        statusLabelComp.setFont(new Font("Arial", Font.BOLD, 10));
-        statusLabelComp.setForeground(isLivre ? new Color(76, 175, 80) : new Color(244, 67, 54));
+        statusLabelComp.setFont(new Font("Arial", Font.BOLD, 11));
+        statusLabelComp.setForeground(isLivre ? new Color(56, 145, 60) : new Color(214, 47, 34));
 
         btn.add(Box.createVerticalStrut(12));
         btn.add(numberLabel);
@@ -94,20 +112,20 @@ public class DashboardPanel extends JPanel {
         btn.add(statusLabelComp);
 
         if (!isLivre) {
-            // Show client name if present
+            // Exibe o nome do cliente, se houver
             String clienteNome = mesa.getClienteAtual() != null ? mesa.getClienteAtual().getNome() : "—";
             JLabel clientLabel = new JLabel(truncate(clienteNome, 12));
             clientLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            clientLabel.setFont(new Font("Arial", Font.PLAIN, 9));
+            clientLabel.setFont(new Font("Arial", Font.PLAIN, 10));
             clientLabel.setForeground(new Color(150, 80, 40));
             btn.add(clientLabel);
-            // Show item count if there's a pedido with items
+            // Exibe a quantidade de itens, se houver pedido com itens
             model.Pedido pedido = mesa.getPedidoAtual();
             if (pedido != null && !pedido.getItens().isEmpty()) {
                 int nItens = pedido.obterQuantidadeTotalItens();
                 JLabel itensLabel = new JLabel(nItens + " item(s)");
                 itensLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-                itensLabel.setFont(new Font("Arial", Font.PLAIN, 8));
+                itensLabel.setFont(new Font("Arial", Font.PLAIN, 10));
                 itensLabel.setForeground(new Color(100, 100, 180));
                 btn.add(itensLabel);
             }
@@ -244,6 +262,7 @@ public class DashboardPanel extends JPanel {
         contentPanel.add(btnPanel);
 
         modal.add(contentPanel);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 
@@ -267,7 +286,7 @@ public class DashboardPanel extends JPanel {
         titleLbl.setForeground(new Color(22, 24, 35));
         contentPanel.add(titleLbl);
 
-        // Status badge
+        // Selo de status
         if (pedido != null) {
             JLabel statusLbl = new JLabel("Status: " + pedido.getStatus() + "   •   Tempo: " + pedido.obterTempoFormatado());
             statusLbl.setFont(new Font("Arial", Font.PLAIN, 11));
@@ -283,7 +302,7 @@ public class DashboardPanel extends JPanel {
         }
         contentPanel.add(Box.createVerticalStrut(14));
 
-        // Pedido items
+        // Itens do pedido
         if (pedido != null && !pedido.getItens().isEmpty()) {
             JLabel itensTitle = new JLabel("Itens do Pedido:");
             itensTitle.setFont(new Font("Arial", Font.BOLD, 12));
@@ -342,6 +361,7 @@ public class DashboardPanel extends JPanel {
         contentPanel.add(btnPanel);
 
         modal.add(contentPanel);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 
@@ -461,6 +481,7 @@ public class DashboardPanel extends JPanel {
         contentPanel.add(btnPanel);
 
         modal.add(contentPanel);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 

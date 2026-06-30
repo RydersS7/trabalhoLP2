@@ -70,7 +70,7 @@ public class ClientPanel extends JPanel {
         clientTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         refreshClientTable();
 
-        // Double-click to edit
+        // Duplo clique para editar
         clientTable.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -157,6 +157,7 @@ public class ClientPanel extends JPanel {
         cp.add(btnPanel);
 
         modal.add(cp);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 
@@ -274,6 +275,7 @@ public class ClientPanel extends JPanel {
         cp.add(btnPanel);
 
         modal.add(cp);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 
@@ -323,6 +325,7 @@ public class ClientPanel extends JPanel {
         cp.add(btnPanel);
 
         modal.add(cp);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 

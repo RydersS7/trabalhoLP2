@@ -139,7 +139,7 @@ public class MenuPanel extends JPanel {
         cp.add(priceField);
         cp.add(Box.createVerticalStrut(10));
 
-        // Dynamic label based on category
+        // Rótulo dinâmico baseado na categoria
         JLabel specLbl = new JLabel("Descrição do prato:");
         specLbl.setFont(new Font("Arial", Font.BOLD, 11)); specLbl.setForeground(new Color(51,51,51));
         cp.add(specLbl);
@@ -157,7 +157,7 @@ public class MenuPanel extends JPanel {
         spec2Field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         cp.add(spec2Field);
 
-        // Toggle fields based on category
+        // Alterna os campos conforme a categoria
         categoryCombo.addActionListener(e -> {
             boolean isComida = "Comida".equals(categoryCombo.getSelectedItem());
             specLbl.setText(isComida ? "Descrição do prato:" : "Fornecedor:");
@@ -206,6 +206,7 @@ public class MenuPanel extends JPanel {
         cp.add(btnPanel);
 
         modal.add(cp);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 
@@ -261,6 +262,7 @@ public class MenuPanel extends JPanel {
         cp.add(btnPanel);
 
         modal.add(cp);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 
@@ -329,6 +331,7 @@ public class MenuPanel extends JPanel {
         cp.add(btnPanel);
 
         modal.add(cp);
+        ThemeManager.apply(modal);
         modal.setVisible(true);
     }
 

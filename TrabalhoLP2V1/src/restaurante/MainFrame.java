@@ -15,7 +15,7 @@ public class MainFrame extends JFrame {
     private MenuPanel menuPanel;
     private ClientPanel clientPanel;
 
-    // Sidebar stat labels for live update
+    // Rótulos de estatísticas da barra lateral para atualização em tempo real
     private JLabel livresVal;
     private JLabel ocupadasVal;
     private JLabel clientesVal;
@@ -56,6 +56,9 @@ public class MainFrame extends JFrame {
         bodyPanel.add(contentPanel, BorderLayout.CENTER);
         mainPanel.add(bodyPanel, BorderLayout.CENTER);
         add(mainPanel);
+
+        // Aplica o tema persistido (caso o usuário já tenha alternado anteriormente)
+        ThemeManager.apply(getContentPane());
     }
 
     private JPanel createHeader() {
@@ -93,21 +96,35 @@ public class MainFrame extends JFrame {
         JPanel dotPanel = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                g.setColor(new Color(76, 175, 80));
-                g.fillOval(2, 2, 8, 8);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(76, 175, 80));
+                g2.fillOval(1, 1, 10, 10);
+                g2.dispose();
             }
         };
         dotPanel.setPreferredSize(new Dimension(12, 12));
         dotPanel.setBackground(new Color(26, 26, 26));
         JLabel statusLabel = new JLabel("Sistema ativo");
-        statusLabel.setForeground(new Color(136, 136, 136));
+        statusLabel.setForeground(new Color(160, 160, 168));
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 12));
 
-        JButton logoutBtn = new JButton("Sair");
-        logoutBtn.setBackground(new Color(50, 52, 70));
-        logoutBtn.setForeground(new Color(200, 205, 220));
-        logoutBtn.setFont(new Font("Arial", Font.PLAIN, 11));
-        logoutBtn.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
+        JButton logoutBtn = new JButton("Sair") {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color base = getModel().isPressed() ? new Color(40, 42, 58) :
+                             getModel().isRollover() ? new Color(64, 67, 90) : new Color(50, 52, 70);
+                g2.setColor(base);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 7, 7);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        logoutBtn.setForeground(new Color(225, 228, 238));
+        logoutBtn.setFont(new Font("Arial", Font.BOLD, 11));
+        logoutBtn.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
+        logoutBtn.setContentAreaFilled(false);
         logoutBtn.setFocusPainted(false);
         logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         logoutBtn.addActionListener(e -> {
@@ -117,6 +134,9 @@ public class MainFrame extends JFrame {
 
         statusPanel.add(dotPanel);
         statusPanel.add(statusLabel);
+        statusPanel.add(Box.createHorizontalStrut(8));
+        JButton themeBtn = ThemeManager.createToggleButton(this.getContentPane());
+        statusPanel.add(themeBtn);
         statusPanel.add(Box.createHorizontalStrut(8));
         statusPanel.add(logoutBtn);
         header.add(statusPanel, BorderLayout.EAST);
@@ -132,7 +152,7 @@ public class MainFrame extends JFrame {
         sidebar.setPreferredSize(new Dimension(220, 0));
 
         JLabel navLabel = new JLabel("NAVEGAÇÃO");
-        navLabel.setFont(new Font("Arial", Font.BOLD, 9));
+        navLabel.setFont(new Font("Arial", Font.BOLD, 10));
         navLabel.setForeground(new Color(102, 102, 102));
         navLabel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         navLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -158,7 +178,7 @@ public class MainFrame extends JFrame {
         statsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel resumoLabel = new JLabel("RESUMO");
-        resumoLabel.setFont(new Font("Arial", Font.BOLD, 9));
+        resumoLabel.setFont(new Font("Arial", Font.BOLD, 10));
         resumoLabel.setForeground(new Color(102, 102, 102));
         resumoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         statsPanel.add(resumoLabel);
@@ -242,7 +262,7 @@ public class MainFrame extends JFrame {
         currentView = viewId;
         CardLayout cl = (CardLayout) contentPanel.getLayout();
         cl.show(contentPanel, viewId);
-        // Update button highlight
+        // Atualiza o destaque do botão
         for (JButton b : navButtons) {
             b.setBackground(new Color(26, 26, 26));
         }
