@@ -1,1 +1,1 @@
-att cadastro, tela principal e nd mais.
+Arthur Felipe, Lucas Vinicuis, Raphael Lopes, Ryan.
